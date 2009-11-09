@@ -1,12 +1,13 @@
 {-# LANGUAGE CPP #-}
 
 import Control.Monad (foldM_, forM_)
-import Data.Maybe ( fromMaybe )
+import Data.Maybe (fromMaybe)
 import System.Cmd
 import System.Exit
 import System.Info (os)
 import System.FilePath
-import System.Directory ( doesFileExist, copyFile, removeFile, createDirectoryIfMissing )
+import System.Directory (doesFileExist, copyFile, removeFile,
+                         createDirectoryIfMissing)
 
 import Distribution.PackageDescription
 import Distribution.Simple.Setup
@@ -15,29 +16,33 @@ import Distribution.Simple.LocalBuildInfo
 
 #ifndef WIN32
 import System.Posix.Files (fileMode, getFileStatus, setFileMode,
-                           ownerExecuteMode, groupExecuteMode, otherExecuteMode)
+                           ownerExecuteMode, groupExecuteMode,
+                           otherExecuteMode)
 import Data.Bits ( (.|.) )
 #endif
 
 main :: IO ()
 main = defaultMainWithHooks $ addMacHook simpleUserHooks
- where
-  addMacHook h =
-   case os of
-    "darwin" -> h { postInst = appBundleHook } -- is it OK to treat darwin as synonymous with MacOS X?
-    _        -> h
+  where addMacHook h =
+          case os of
+            -- is it OK to treat darwin as synonymous with MacOS X?
+            "darwin" -> h { postInst = appBundleHook }
+            _        -> h
 
-appBundleHook :: Args -> InstallFlags -> PackageDescription -> LocalBuildInfo -> IO ()
+appBundleHook :: Args -> InstallFlags -> PackageDescription ->
+                 LocalBuildInfo -> IO ()
 appBundleHook _ _ pkg localb =
- forM_ exes $ \app ->
-   do createAppBundle theBindir (buildDir localb </> app </> app)
-      customiseAppBundle (appBundlePath theBindir app) app
-        `catch` \err -> putStrLn $ "Warning: could not customise bundle for " ++ app ++ ": " ++ show err
-      removeFile (theBindir </> app)
-      createAppBundleWrapper theBindir app
- where
-  theBindir = bindir $ absoluteInstallDirs pkg localb NoCopyDest
-  exes = fromMaybe (map exeName $ executables pkg) mRestrictTo
+  forM_ exes $ \app -> thing localb app pkg
+    where exes = fromMaybe (map exeName $ executables pkg) mRestrictTo
+                       
+thing localb app pkg = 
+  do createAppBundle theBindir (buildDir localb </> app </> app)
+     customiseAppBundle (appBundlePath theBindir app) app
+        `catch` \err -> putStrLn $ ("Warning: could not customise bundle " ++
+                                    "for " ++ app ++ ": " ++ show err)
+     removeFile (theBindir </> app)
+     createAppBundleWrapper theBindir app
+    where theBindir = bindir $ absoluteInstallDirs pkg localb NoCopyDest
 
 -- ----------------------------------------------------------------------
 -- helper code for application bundles
@@ -48,14 +53,13 @@ appBundleHook _ _ pkg localb =
 --   Note that only the filename part of @p@ is used.
 createAppBundle :: FilePath -> FilePath -> IO ()
 createAppBundle dir p =
- do createDirectoryIfMissing False $ bundle
-    createDirectoryIfMissing True  $ bundleBin
-    createDirectoryIfMissing True  $ bundleRsrc
-    copyFile p (bundleBin </> takeFileName p)
- where
-  bundle     = appBundlePath dir p
-  bundleBin  = bundle </> "Contents/MacOS"
-  bundleRsrc = bundle </> "Contents/Resources"
+  do createDirectoryIfMissing False $ bundle
+     createDirectoryIfMissing True  $ bundleBin
+     createDirectoryIfMissing True  $ bundleRsrc
+     copyFile p (bundleBin </> takeFileName p)
+    where bundle     = appBundlePath dir p
+          bundleBin  = bundle </> "Contents/MacOS"
+          bundleRsrc = bundle </> "Contents/Resources"
 
 -- | 'createAppBundleWrapper' @d p@ - creates a script in @d@ that calls
 --   @p@ from the application bundle @d </> takeFileName p <.> "app"@
@@ -63,9 +67,9 @@ createAppBundleWrapper :: FilePath -> FilePath -> IO ()
 createAppBundleWrapper bindir p =
   do writeFile scriptFile scriptTxt
      makeExecutable scriptFile
- where
-  scriptFile = bindir </> takeFileName p
-  scriptTxt = "`dirname $0`" </> appBundlePath "." p </> "Contents/MacOS" </> takeFileName p ++ " \"$@\""
+   where scriptFile = bindir </> takeFileName p
+         scriptTxt = "`dirname $0`" </> appBundlePath "." p </>
+                     "Contents/MacOS" </> takeFileName p ++ " \"$@\""
 
 appBundlePath :: FilePath -> FilePath -> FilePath
 appBundlePath dir p = dir </> takeFileName p <.> "app"
@@ -95,21 +99,21 @@ customiseAppBundle :: FilePath -- ^ app bundle path
                    -> FilePath -- ^ full path to original binary
                    -> IO ()
 customiseAppBundle bundleDir p =
- case takeFileName p of
-  "geni" ->
-    do hasRez <- doesFileExist "/Developer/Tools/Rez"
-       if hasRez
-          then do -- set the icon
-                  copyFile "etc/macstuff/Info.plist" (bundleDir </> "Contents/Info.plist")
-                  copyFile "etc/macstuff/wxmac.icns" (bundleDir </> "Contents/Resources/wxmac.icns")
-                  -- no idea what this does
-                  system ("/Developer/Tools/Rez -t APPL Carbon.r -o " ++ bundleDir </> "Contents/MacOS/geni")
-                  writeFile (bundleDir </> "PkgInfo") "APPL????"
-                  -- tell Finder about the icon
-                  system ("/Developer/Tools/SetFile -a C " ++ bundleDir </> "Contents")
-                  return ()
-          else putStrLn "Developer Tools not found.  Too bad; no fancy icons for you."
-  ""     -> return ()
+  case takeFileName p of
+    "geni" ->
+      do hasRez <- doesFileExist "/Developer/Tools/Rez"
+         if hasRez
+           then do -- set the icon
+                   copyFile "etc/macstuff/Info.plist" (bundleDir </> "Contents/Info.plist")
+                   copyFile "etc/macstuff/wxmac.icns" (bundleDir </> "Contents/Resources/wxmac.icns")
+                   -- no idea what this does
+                   system ("/Developer/Tools/Rez -t APPL Carbon.r -o " ++ bundleDir </> "Contents/MacOS/geni")
+                   writeFile (bundleDir </> "PkgInfo") "APPL????"
+                   -- tell Finder about the icon
+                   system ("/Developer/Tools/SetFile -a C " ++ bundleDir </> "Contents")
+                   return ()
+           else putStrLn "Developer Tools not found.  Too bad; no fancy icons for you."
+    ""     -> return ()
 
 -- | Put here the list of executables which contain a GUI.  If they all
 --   contain a GUI (or you don't really care that much), just put Nothing
