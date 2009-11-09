@@ -1,5 +1,8 @@
 {-# LANGUAGE CPP #-}
 
+module Distribution.MacOSX
+where
+
 import Control.Monad (foldM_, forM_)
 import Data.Maybe (fromMaybe)
 import System.Cmd
