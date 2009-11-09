@@ -2,9 +2,16 @@
 
 {- | Helpers for Mac OS X app distribution via Cabal.
 
+This version creates an app in the _build_ directory, but doesn't
+really think about installation yet.  Icons and Info.plists may be
+specified as parameters of the exes to build app bundles for.  It's
+still pretty messy, work in progress, etc.
+
 -}
 
 module Distribution.MacOSX (
+  MacApp,
+  MacCustom(..),
   appBundleHook
 ) where
 
@@ -19,7 +26,7 @@ import Distribution.PackageDescription (PackageDescription(..),
                                         Executable(..))
 import Distribution.Simple.InstallDirs (bindir)
 import Distribution.Simple (Args)
-import Distribution.Simple.Setup (InstallFlags, CopyDest(..))
+import Distribution.Simple.Setup (BuildFlags, CopyDest(..))
 import Distribution.Simple.LocalBuildInfo (absoluteInstallDirs,
                                            LocalBuildInfo(..))
 
@@ -33,24 +40,45 @@ import System.Posix.Files (fileMode, getFileStatus, setFileMode,
 import Data.Bits ( (.|.) )
 #endif
 
+type MacApp = (String, [MacCustom])
+
+-- | Mac-specific customisations for inclusion in bundles.
+data MacCustom =
+  -- | Path to plist file to copy to Contents/Info.plist
+  MacInfoPlist FilePath
+  -- | Path to icon file.
+  | MacIcon FilePath
+  deriving (Eq, Show)
+
+-- This is now a postBuild hook, not postInst.  Installation not yet
+-- handled properly, probably.
+
 -- appExes - put here the list of executables which contain a GUI.
 -- If they all contain a GUI (or you don't really care that much),
 -- just put Nothing.
-appBundleHook :: Maybe [String] -> Args -> InstallFlags ->
+appBundleHook :: Maybe [MacApp] -> Args -> BuildFlags ->
                  PackageDescription -> LocalBuildInfo -> IO ()
 appBundleHook appExes _ _ pkg localb =
   forM_ exes $ \app -> makeAppBundle localb app pkg
-    where exes = fromMaybe (map exeName $ executables pkg) appExes
-                       
-makeAppBundle :: LocalBuildInfo -> FilePath -> PackageDescription -> IO()
-makeAppBundle localb app pkg = 
-  do createAppBundle theBindir (buildDir localb </> app </> app)
-     customiseAppBundle (appBundlePath theBindir app) app
+    where --exes = fromMaybe (map exeName $ executables pkg) appExes
+          exes = case appExes of
+            Just x -> x
+            Nothing -> (map (macApp . exeName) $ executables pkg)
+
+macApp :: FilePath -> MacApp
+macApp f = (f, [])
+
+makeAppBundle :: LocalBuildInfo -> MacApp -> PackageDescription -> IO()
+makeAppBundle localb (app, customs) pkg =
+  do createAppBundle (buildDir localb) (appParent </> app)
+     customiseAppBundle bundlePath app customs
         `catch` \err -> putStrLn $ ("Warning: could not customise bundle " ++
                                     "for " ++ app ++ ": " ++ show err)
-     removeFile (theBindir </> app)
-     createAppBundleWrapper theBindir app
-    where theBindir = bindir $ absoluteInstallDirs pkg localb NoCopyDest
+     -- removeFile (theBindir </> app)
+     -- createAppBundleWrapper theBindir app
+    where bundlePath = appBundlePath (buildDir localb) app
+          appParent = buildDir localb </> app
+          -- theBindir = bindir $ absoluteInstallDirs pkg localb NoCopyDest
 
 -- ----------------------------------------------------------------------
 -- helper code for application bundles
@@ -107,25 +135,29 @@ makeExecutable f =
 -- | Put here IO actions needed to add any fancy things (eg icons) you
 -- want to your application bundle.
 customiseAppBundle :: FilePath -- ^ app bundle path
-                   -> FilePath -- ^ full path to original binary
+                   -> FilePath -- ^ full path to original binary XXX
+                   -> [MacCustom]
                    -> IO ()
-customiseAppBundle bundleDir p =
-  case takeFileName p of
-    "geni" ->
-      do hasRez <- doesFileExist "/Developer/Tools/Rez"
-         if hasRez
-           then setIcon bundleDir "geni"
-           else putStrLn $ "Developer Tools not found.  Too bad; " ++
-                  "no fancy icons for you."
-    _     -> return ()
+customiseAppBundle bundleDir p cs =
+  do hasRez <- doesFileExist "/Developer/Tools/Rez"
+     if hasRez
+       then mapM_ (copyResource bundleDir p) cs
+       else putStrLn $ "Developer Tools not found.  Too bad; " ++
+              "no fancy icons for you."
 
--- | Set the icon.
-setIcon :: FilePath -> FilePath -> IO ()
-setIcon bundleDir appName =
-  do copyFile "etc/macstuff/Info.plist" (bundleDir </>
-                                         "Contents/Info.plist")
-     copyFile "etc/macstuff/wxmac.icns" (bundleDir </>
-                                         "Contents/Resources/wxmac.icns")
+-- XXX We currently basically demand that the user supply an
+-- Info.plist if they want an icon - but doesn't macosx-app
+-- automatically create one if necessary?  I _think_ so - in which
+-- case it would be nice to duplicate that here.
+
+-- | Copy custom resources (icons and plists) into place.
+copyResource :: FilePath -> FilePath -> MacCustom -> IO ()
+copyResource bundleDir _ (MacInfoPlist f) =
+  do putStrLn $ "Copying " ++ f ++ " to Info.plist in bundle."
+     copyFile f (bundleDir </> "Contents/Info.plist")
+copyResource bundleDir appName (MacIcon f) =
+  do putStrLn $ "Setting " ++ f ++ " to bundle's icon."
+     copyFile f (bundleDir </> "Contents/Resources" </> takeFileName f)
      -- no idea what this does
      system ("/Developer/Tools/Rez -t APPL Carbon.r -o " ++
              bundleDir </> "Contents/MacOS" </> appName)
