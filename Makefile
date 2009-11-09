@@ -2,6 +2,7 @@ TARGET		:=	osxSetup
 SRC		:=	Distribution
 
 HASKELLS	:=	$(shell find $(SRC) -name "*.hs" -or -name "*.lhs")
+HADDOCKS	:=	dist/doc/html/$(TARGET)
 
 clean:
 			@find . -name '*~' -exec rm -vf {} ';' && \
@@ -17,9 +18,24 @@ dist/setup-config:	$(TARGET).cabal
 dist/build:		$(HASKELLS) dist/setup-config
 			runghc Setup build
 
+
 configure:		$(HASKELLS) dist/setup-config
+
+$(HADDOCKS)/index.html:	configure
+			runghc Setup haddock --hyperlink-source
+
+haddock:		$(HADDOCKS)/index.html
 
 build:			dist/build
 
+
+sdist:			dist/build
+			runghc Setup sdist
+
+view:			haddock
+			open $(HADDOCKS)/index.html
+
 lint:
 			hlint $(HASKELLS)
+
+.PHONY: clean configure build haddock sdist view lint nuke
