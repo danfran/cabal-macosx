@@ -4,23 +4,28 @@
 
 -}
 
-module Distribution.MacOSX
-where
+module Distribution.MacOSX (
+  appBundleHook
+) where
 
-import Control.Monad (foldM_, forM_)
+import Control.Monad (forM_)
 import Data.Maybe (fromMaybe)
 import System.Cmd
-import System.Exit
-import System.Info (os)
 import System.FilePath
 import System.Directory (doesFileExist, copyFile, removeFile,
                          createDirectoryIfMissing)
 
-import Distribution.PackageDescription
-import Distribution.Simple.Setup
-import Distribution.Simple
-import Distribution.Simple.LocalBuildInfo
+import Distribution.PackageDescription (PackageDescription(..),
+                                        Executable(..))
+import Distribution.Simple.InstallDirs (bindir)
+import Distribution.Simple (Args)
+import Distribution.Simple.Setup (InstallFlags, CopyDest(..))
+import Distribution.Simple.LocalBuildInfo (absoluteInstallDirs,
+                                           LocalBuildInfo(..))
 
+-- XXX What's the purpose of the WIN32 stuff?  We're doing
+-- Mac-specific processing here, aren't we?  Is this to do with
+-- cross-compilation or some such exotica?  :-)
 #ifndef WIN32
 import System.Posix.Files (fileMode, getFileStatus, setFileMode,
                            ownerExecuteMode, groupExecuteMode,
@@ -28,21 +33,17 @@ import System.Posix.Files (fileMode, getFileStatus, setFileMode,
 import Data.Bits ( (.|.) )
 #endif
 
-main :: IO ()
-main = defaultMainWithHooks $ addMacHook simpleUserHooks
-  where addMacHook h =
-          case os of
-            -- is it OK to treat darwin as synonymous with MacOS X?
-            "darwin" -> h { postInst = appBundleHook }
-            _        -> h
-
-appBundleHook :: Args -> InstallFlags -> PackageDescription ->
-                 LocalBuildInfo -> IO ()
-appBundleHook _ _ pkg localb =
-  forM_ exes $ \app -> thing localb app pkg
-    where exes = fromMaybe (map exeName $ executables pkg) mRestrictTo
+-- appExes - put here the list of executables which contain a GUI.
+-- If they all contain a GUI (or you don't really care that much),
+-- just put Nothing.
+appBundleHook :: Maybe [String] -> Args -> InstallFlags ->
+                 PackageDescription -> LocalBuildInfo -> IO ()
+appBundleHook appExes _ _ pkg localb =
+  forM_ exes $ \app -> makeAppBundle localb app pkg
+    where exes = fromMaybe (map exeName $ executables pkg) appExes
                        
-thing localb app pkg = 
+makeAppBundle :: LocalBuildInfo -> FilePath -> PackageDescription -> IO()
+makeAppBundle localb app pkg = 
   do createAppBundle theBindir (buildDir localb </> app </> app)
      customiseAppBundle (appBundlePath theBindir app) app
         `catch` \err -> putStrLn $ ("Warning: could not customise bundle " ++
@@ -71,10 +72,10 @@ createAppBundle dir p =
 -- | 'createAppBundleWrapper' @d p@ - creates a script in @d@ that
 -- calls @p@ from the application bundle. 
 createAppBundleWrapper :: FilePath -> FilePath -> IO ()
-createAppBundleWrapper bindir p =
+createAppBundleWrapper binDir p =
   do writeFile scriptFile scriptTxt
      makeExecutable scriptFile
-   where scriptFile = bindir </> takeFileName p
+   where scriptFile = binDir </> takeFileName p
          scriptTxt = "`dirname $0`" </> appBundlePath "." p </>
                      "Contents/MacOS" </> takeFileName p ++ " \"$@\""
 
@@ -113,22 +114,22 @@ customiseAppBundle bundleDir p =
     "geni" ->
       do hasRez <- doesFileExist "/Developer/Tools/Rez"
          if hasRez
-           then do -- set the icon
-                   copyFile "etc/macstuff/Info.plist" (bundleDir </> "Contents/Info.plist")
-                   copyFile "etc/macstuff/wxmac.icns" (bundleDir </> "Contents/Resources/wxmac.icns")
-                   -- no idea what this does
-                   system ("/Developer/Tools/Rez -t APPL Carbon.r -o " ++ bundleDir </> "Contents/MacOS/geni")
-                   writeFile (bundleDir </> "PkgInfo") "APPL????"
-                   -- tell Finder about the icon
-                   system ("/Developer/Tools/SetFile -a C " ++ bundleDir </> "Contents")
-                   return ()
-           else putStrLn "Developer Tools not found.  Too bad; no fancy icons for you."
-    ""     -> return ()
+           then setIcon bundleDir "geni"
+           else putStrLn $ "Developer Tools not found.  Too bad; " ++
+                  "no fancy icons for you."
+    _     -> return ()
 
--- XXX Following needs factoring out.
-
--- | Put here the list of executables which contain a GUI.  If they
--- all contain a GUI (or you don't really care that much), just put
--- Nothing.
-mRestrictTo :: Maybe [String]
-mRestrictTo = Just ["geni"]
+-- | Set the icon.
+setIcon :: FilePath -> FilePath -> IO ()
+setIcon bundleDir appName =
+  do copyFile "etc/macstuff/Info.plist" (bundleDir </>
+                                         "Contents/Info.plist")
+     copyFile "etc/macstuff/wxmac.icns" (bundleDir </>
+                                         "Contents/Resources/wxmac.icns")
+     -- no idea what this does
+     system ("/Developer/Tools/Rez -t APPL Carbon.r -o " ++
+             bundleDir </> "Contents/MacOS" </> appName)
+     writeFile (bundleDir </> "PkgInfo") "APPL????"
+     -- tell Finder about the icon
+     system ("/Developer/Tools/SetFile -a C " ++ bundleDir </> "Contents")
+     return ()
