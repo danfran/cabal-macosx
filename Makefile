@@ -1,4 +1,4 @@
-TARGET		:=	osxSetup
+TARGET		:=	cabal-macosx
 SRC		:=	Distribution
 
 HASKELLS	:=	$(shell find $(SRC) -name "*.hs" -or -name "*.lhs")

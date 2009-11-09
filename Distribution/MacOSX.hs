@@ -1,5 +1,9 @@
 {-# LANGUAGE CPP #-}
 
+{- | Helpers for Mac OS X app distribution via Cabal.
+
+-}
+
 module Distribution.MacOSX
 where
 
@@ -52,8 +56,8 @@ thing localb app pkg =
 -- ----------------------------------------------------------------------
 
 -- | 'createAppBundle' @d p@ - creates an application bundle in @d@
---   for program @p@, assuming that @d@ already exists and is a directory.
---   Note that only the filename part of @p@ is used.
+-- for program @p@, assuming that @d@ already exists and is a
+-- directory.  Note that only the filename part of @p@ is used.
 createAppBundle :: FilePath -> FilePath -> IO ()
 createAppBundle dir p =
   do createDirectoryIfMissing False $ bundle
@@ -64,8 +68,8 @@ createAppBundle dir p =
           bundleBin  = bundle </> "Contents/MacOS"
           bundleRsrc = bundle </> "Contents/Resources"
 
--- | 'createAppBundleWrapper' @d p@ - creates a script in @d@ that calls
---   @p@ from the application bundle @d </> takeFileName p <.> "app"@
+-- | 'createAppBundleWrapper' @d p@ - creates a script in @d@ that
+-- calls @p@ from the application bundle. 
 createAppBundleWrapper :: FilePath -> FilePath -> IO ()
 createAppBundleWrapper bindir p =
   do writeFile scriptFile scriptTxt
@@ -74,6 +78,8 @@ createAppBundleWrapper bindir p =
          scriptTxt = "`dirname $0`" </> appBundlePath "." p </>
                      "Contents/MacOS" </> takeFileName p ++ " \"$@\""
 
+-- | 'appBundlePath' @d p@ - compute path to application bundle in @d@
+-- for program @p@.
 appBundlePath :: FilePath -> FilePath -> FilePath
 appBundlePath dir p = dir </> takeFileName p <.> "app"
 
@@ -81,6 +87,7 @@ appBundlePath dir p = dir </> takeFileName p <.> "app"
 -- utilities
 -- ----------------------------------------------------------------------
 
+-- | Make a file executable by all.
 makeExecutable :: FilePath -> IO ()
 #ifdef WIN32
 makeExecutable = const (return ())
@@ -96,8 +103,8 @@ makeExecutable f =
 -- customisations
 -- ----------------------------------------------------------------------
 
--- | Put here IO actions needed to add any fancy things (eg icons)
---   you want to your application bundle.
+-- | Put here IO actions needed to add any fancy things (eg icons) you
+-- want to your application bundle.
 customiseAppBundle :: FilePath -- ^ app bundle path
                    -> FilePath -- ^ full path to original binary
                    -> IO ()
@@ -118,7 +125,10 @@ customiseAppBundle bundleDir p =
            else putStrLn "Developer Tools not found.  Too bad; no fancy icons for you."
     ""     -> return ()
 
--- | Put here the list of executables which contain a GUI.  If they all
---   contain a GUI (or you don't really care that much), just put Nothing
+-- XXX Following needs factoring out.
+
+-- | Put here the list of executables which contain a GUI.  If they
+-- all contain a GUI (or you don't really care that much), just put
+-- Nothing.
 mRestrictTo :: Maybe [String]
 mRestrictTo = Just ["geni"]

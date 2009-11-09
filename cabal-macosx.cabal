@@ -1,4 +1,4 @@
-Name:                   osxSetup
+Name:                   cabal-macosx
 Version:                0.1.0
 Stability:              Alpha
 Synopsis:               Build/installation helpers for Mac OS X.
