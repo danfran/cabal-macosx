@@ -1,0 +1,24 @@
+Name:                   osxSetup
+Version:                0.1.0
+Stability:              Alpha
+Synopsis:               Build/installation helpers for Mac OS X.
+Description:
+    Build/installation helpers for Mac OS X.
+Category:               Data
+License:                BSD3
+License-file:           LICENSE
+Copyright:              Eric Kow & Andy Gimblett
+Author:                 Eric Kow <eric.kow@gmail.com>
+Maintainer:             Andy Gimblett <haskell@gimbo.org.uk>
+Build-Type:             Simple
+Cabal-Version:          >=1.6
+
+Source-Repository head
+    Type:         git
+    Location:     http://github.com/gimbo/osxSetup.hs
+
+Library
+  Build-Depends:   base >= 4 && < 5, Cabal >= 1.6, directory,
+                   filepath, process, unix
+  Exposed-modules: Distribution.MacOSX
+  ghc-options:     -fwarn-tabs -Wall
