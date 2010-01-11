@@ -2,17 +2,16 @@
 
 {- | Helpers for Mac OS X app distribution via Cabal.
 
-This version creates an app in the _build_ directory, but doesn't
-really think about installation yet.  Icons and Info.plists may be
-specified as parameters of the exes to build app bundles for.  It's
-still pretty messy, work in progress, etc.
+'appBundleBuildHook' controls building application bundles for
+whichever executables need them, possibly including customisations
+(e.g. icon).
 
 -}
 
 module Distribution.MacOSX (
   MacApp,
   MacCustom(..),
-  appBundleHook
+  appBundleBuildHook
 ) where
 
 import Control.Monad (forM_)
@@ -25,7 +24,7 @@ import System.Directory (doesFileExist, copyFile, removeFile,
 import Distribution.PackageDescription (PackageDescription(..),
                                         Executable(..))
 import Distribution.Simple.InstallDirs (bindir)
-import Distribution.Simple (Args)
+import Distribution.Simple
 import Distribution.Simple.Setup (BuildFlags, CopyDest(..))
 import Distribution.Simple.LocalBuildInfo (absoluteInstallDirs,
                                            LocalBuildInfo(..))
@@ -40,35 +39,36 @@ import System.Posix.Files (fileMode, getFileStatus, setFileMode,
 import Data.Bits ( (.|.) )
 #endif
 
+-- | Executables for which an application bundle should built,
+-- identified by executable name (as specified in the relevant file),
+-- along with their customisations.
 type MacApp = (String, [MacCustom])
 
--- | Mac-specific customisations for inclusion in bundles.
+-- | Application bundle customisations.
 data MacCustom =
   -- | Path to plist file to copy to Contents/Info.plist
   MacInfoPlist FilePath
-  -- | Path to icon file.
+  -- | Path to icon file (should also be referenced from plist file).
   | MacIcon FilePath
   deriving (Eq, Show)
 
--- This is now a postBuild hook, not postInst.  Installation not yet
--- handled properly, probably.
-
--- appExes - put here the list of executables which contain a GUI.
--- If they all contain a GUI (or you don't really care that much),
--- just put Nothing.
-appBundleHook :: Maybe [MacApp] -> Args -> BuildFlags ->
-                 PackageDescription -> LocalBuildInfo -> IO ()
-appBundleHook appExes _ _ pkg localb =
+-- | Post-build hook for OS X application bundles.
+appBundleBuildHook ::
+  Maybe [MacApp] -- ^ List of executables to build application bundles
+                 -- for; @Nothing@ means build for all, with no
+                 -- customisations.
+  -> Args -- ^ All other parameters as per
+          -- 'Distribution.Simple.postInst'.
+  -> BuildFlags -> PackageDescription -> LocalBuildInfo -> IO ()
+appBundleBuildHook appExes _ _ pkg localb =
   forM_ exes $ \app -> makeAppBundle localb app pkg
-    where --exes = fromMaybe (map exeName $ executables pkg) appExes
-          exes = case appExes of
+    where exes = case appExes of
             Just x -> x
-            Nothing -> (map (macApp . exeName) $ executables pkg)
+            Nothing -> map (\x -> (exeName x, [])) $ executables pkg
 
-macApp :: FilePath -> MacApp
-macApp f = (f, [])
-
-makeAppBundle :: LocalBuildInfo -> MacApp -> PackageDescription -> IO()
+-- | Given a 'MacApp' in context, make an application bundle in the
+-- build area.
+makeAppBundle :: LocalBuildInfo -> MacApp -> PackageDescription -> IO ()
 makeAppBundle localb (app, customs) pkg =
   do createAppBundle (buildDir localb) (appParent </> app)
      customiseAppBundle bundlePath app customs
@@ -150,7 +150,8 @@ customiseAppBundle bundleDir p cs =
 -- automatically create one if necessary?  I _think_ so - in which
 -- case it would be nice to duplicate that here.
 
--- | Copy custom resources (icons and plists) into place.
+-- | @copyResource b n c@ - copies custom resource @c@ for application
+-- @n@ into place in bundle @b@.
 copyResource :: FilePath -> FilePath -> MacCustom -> IO ()
 copyResource bundleDir _ (MacInfoPlist f) =
   do putStrLn $ "Copying " ++ f ++ " to Info.plist in bundle."
@@ -158,10 +159,13 @@ copyResource bundleDir _ (MacInfoPlist f) =
 copyResource bundleDir appName (MacIcon f) =
   do putStrLn $ "Setting " ++ f ++ " to bundle's icon."
      copyFile f (bundleDir </> "Contents/Resources" </> takeFileName f)
-     -- no idea what this does
-     system ("/Developer/Tools/Rez -t APPL Carbon.r -o " ++
-             bundleDir </> "Contents/MacOS" </> appName)
+     -- Now some Carbon-related voodoo.
+     system ("/Developer/Tools/Rez Carbon.r -o " ++ bundleDir </>
+             "Contents/MacOS" </> appName)
      writeFile (bundleDir </> "PkgInfo") "APPL????"
      -- tell Finder about the icon
      system ("/Developer/Tools/SetFile -a C " ++ bundleDir </> "Contents")
      return ()
+
+
+
