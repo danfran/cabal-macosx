@@ -1,0 +1,22 @@
+Name:                   wxHello
+Version:                0.1.0
+Stability:              Alpha
+Synopsis:               wxWidgets `Hello World' example for osxSetup.hs
+Description:
+    An example of using osxSetup.hs, to build an application bundle
+    for a simple `Hello World' program using the wxWidgets GUI
+    toolkit.
+Category:               Data
+License:                BSD3
+License-file:           LICENSE
+Copyright:              Andy Gimblett <haskell@gimbo.org.uk>
+Author:                 Andy Gimblett <haskell@gimbo.org.uk>
+Maintainer:             Andy Gimblett <haskell@gimbo.org.uk>
+Build-Type:             Custom
+Cabal-Version:          >=1.6
+
+Executable WxHello
+  hs-source-dirs:       src
+  Main-is:              Main.hs
+  Build-Depends:        base >= 3 && < 5, cabal-macosx, wx
+  ghc-options:          -fwarn-tabs -threaded -Wall
