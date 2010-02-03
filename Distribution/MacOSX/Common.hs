@@ -1,6 +1,4 @@
-module Distribution.MacOSX.Common
-
-where
+module Distribution.MacOSX.Common where
 
 import System.FilePath
 
@@ -8,21 +6,17 @@ import System.FilePath
 data MacApp = MacApp {
   -- | Application name.
   appName :: String,
-  -- | Application resources - icon and plist.
-  resources :: [AppResource],
+  -- | Path to icon file to copy in..
+  appIcon :: Maybe FilePath,
+  -- | Path to plist file to copy to Contents/Info.plist.  May be
+  -- omitted, but if an appIcon is specified, a default plist will be
+  -- used.
+  appPlist :: Maybe FilePath,
   -- | Other binaries to bundle in the application.
   otherBins :: [FilePath],
   -- | Chase dependencies for the app and bundled binaries?
   appDeps :: ChaseDeps
   } deriving (Eq, Show)
-
--- | Application bundle customisations.
-data AppResource =
-  -- | Path to plist file to copy to Contents/Info.plist
-  MacInfoPlist FilePath
-  -- | Path to icon file (should also be referenced from plist file).
-  | MacIcon FilePath
-  deriving (Eq, Show)
 
 -- | Either chase dependencies or don't; if you do, then allow
 -- exclusions to be specified.
@@ -41,10 +35,3 @@ pathInApp app p
   | p `elem` otherBins app = "Contents/Resources" </> relP
   | otherwise = "Contents/Frameworks" </> relP
   where relP = makeRelative "/" p
-
-foo :: MacApp
-foo = MacApp "WxHello"
-        [MacInfoPlist "resources/WxHello.plist", 
-         MacIcon "resources/WxHello.icns"]
-        ["/bin/ls"]
-        ChaseWithDefaults

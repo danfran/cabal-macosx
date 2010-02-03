@@ -80,11 +80,6 @@ import Text.ParserCombinators.Parsec
 import Distribution.MacOSX.Common
 import Distribution.MacOSX.DG
 
--- | Where do we expect our tools to be?
-oTool, iTool :: String
-oTool = "/usr/bin/otool"
-iTool = "/usr/bin/install_name_tool"
-
 -- | Standard list of libraries not to include.
 defaultExclusions :: Exclusions
 defaultExclusions = 
@@ -143,7 +138,9 @@ addFilesDependencies appPath app dg p excls =
 
 
 
--- Library dependencies for a single file.
+oTool, iTool :: FilePath
+oTool = "/usr/bin/otool"
+iTool = "/usr/bin/install_name_tool"
 
 -- | Get the library dependencies for some file, removing any
 -- exclusions.
