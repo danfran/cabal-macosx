@@ -18,7 +18,10 @@ Source-Repository head
     Location:     http://github.com/gimbo/osxSetup.hs
 
 Library
-  Build-Depends:   base >= 4 && < 5, Cabal >= 1.6, directory,
-                   filepath, process, unix
+  Build-Depends:   base >= 4 && < 5, Cabal >= 1.6, directory, fgl,
+                   filepath, parsec, process, unix
   Exposed-modules: Distribution.MacOSX
+  Other-modules:   Distribution.MacOSX.Common,
+                   Distribution.MacOSX.Dependencies,
+                   Distribution.MacOSX.DG
   ghc-options:     -fwarn-tabs -Wall

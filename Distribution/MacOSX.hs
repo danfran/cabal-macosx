@@ -1,5 +1,3 @@
-{-# LANGUAGE CPP #-}
-
 {- | Helpers for Mac OS X app distribution via Cabal.
 
 'appBundleBuildHook' controls building application bundles for
@@ -12,94 +10,71 @@ module Distribution.MacOSX (
   MacApp(..),
   AppResource(..),
   ChaseDeps(..),
-  appBundleBuildHook
+  Exclusions,
+  defaultExclusions,
+  appBundleBuildHook,
 ) where
 
 import Control.Monad (forM_)
-import System.Cmd
-import System.FilePath
-import System.Directory (doesFileExist, copyFile, createDirectoryIfMissing)
 import Distribution.PackageDescription (PackageDescription(..),
                                         Executable(..))
 import Distribution.Simple
-import Distribution.Simple.Setup (BuildFlags)
 import Distribution.Simple.LocalBuildInfo (LocalBuildInfo(..))
+import Distribution.Simple.Setup (BuildFlags)
+import System.Cmd
+import System.FilePath
+import System.Info (os)
+import System.Directory (doesFileExist, copyFile, createDirectoryIfMissing)
 
--- | A Mac application.
-data MacApp = MacApp {
-  -- | Application name.
-  appName :: String,
-  -- | Application resources - icon and plist.
-  resources :: [AppResource],
-  -- | Chase dependencies for the app?
-  appDeps :: ChaseDeps,
-  -- | Other binaries to bundle in the application.
-  otherBins :: [(FilePath, ChaseDeps)]
-  } deriving (Eq, Show)
+import Distribution.MacOSX.Common
+import Distribution.MacOSX.Dependencies
 
--- | Application bundle customisations.
-data AppResource =
-  -- | Path to plist file to copy to Contents/Info.plist
-  MacInfoPlist FilePath
-  -- | Path to icon file (should also be referenced from plist file).
-  | MacIcon FilePath
-  deriving (Eq, Show)
-
--- | Either chase dependencies or don't; if you do, then allow
--- exclusions to be specified.
-data ChaseDeps = ChaseDeps [String]
-               | NoChaseDeps
-                 deriving (Eq, Show)
-
--- | Post-build hook for OS X application bundles.
+-- | Post-build hook for OS X application bundles.  Does nothing if
+-- called on another O/S.
 appBundleBuildHook ::
   [MacApp] -- ^ List of executables to build application bundles for;
            -- if empty, build for all executables in the package, with
-           -- default customisations and dependency-chasing.
+           -- no icon or plist, and no dependency-chasing.
   -> Args -- ^ All other parameters as per
           -- 'Distribution.Simple.postInst'.
   -> BuildFlags -> PackageDescription -> LocalBuildInfo -> IO ()
 appBundleBuildHook apps _ _ pkg localb =
-  forM_ apps' $ makeAppBundle localb
-    where apps' = case apps of
-            [] -> map mkDefaultApp $ executables pkg
-            xs -> xs
-          mkDefaultApp x = MacApp (exeName x) [] (ChaseDeps []) []
+  case os of
+    "darwin" -> forM_ apps' $ makeAppBundle localb
+      where apps' = case apps of
+                      [] -> map mkDefault $ executables pkg
+                      xs -> xs
+            mkDefault x = MacApp (exeName x) [] [] DoNotChase
+    _ -> putStrLn "Not OS X, so not building an application bundle."
 
 -- | Given a 'MacApp' in context, make an application bundle in the
 -- build area.
 makeAppBundle :: LocalBuildInfo -> MacApp -> IO ()
-makeAppBundle localb appExe =
-  do createAppBundle (buildDir localb) (appParent </> app)
-     customiseAppBundle bundlePath app customs
+makeAppBundle localb app =
+  do appPath <- createAppDir localb app
+     includeDependencies appPath app
+     customiseAppBundle appPath appN customs
         `catch` \err -> putStrLn ("Warning: could not customise bundle " ++
-                                  "for " ++ app ++ ": " ++ show err)
-    where bundlePath = appBundlePath (buildDir localb) app
-          appParent = buildDir localb </> app
-          app = appName appExe
-          customs = resources appExe
+                                  "for " ++ appN ++ ": " ++ show err)
+    where appN = appName app
+          customs = resources app
 
--- ----------------------------------------------------------------------
--- helper code for application bundles
--- ----------------------------------------------------------------------
-
--- | 'createAppBundle' @d p@ - creates an application bundle in @d@
--- for program @p@, assuming that @d@ already exists and is a
--- directory.  Note that only the filename part of @p@ is used.
-createAppBundle :: FilePath -> FilePath -> IO ()
-createAppBundle dir p =
-  do createDirectoryIfMissing False bundle
-     createDirectoryIfMissing True  bundleBin
-     createDirectoryIfMissing True  bundleRsrc
-     copyFile p (bundleBin </> takeFileName p)
-    where bundle     = appBundlePath dir p
-          bundleBin  = bundle </> "Contents/MacOS"
-          bundleRsrc = bundle </> "Contents/Resources"
-
--- | 'appBundlePath' @d p@ - compute path to application bundle in @d@
--- for program @p@.
-appBundlePath :: FilePath -> FilePath -> FilePath
-appBundlePath dir p = dir </> takeFileName p <.> "app"
+-- | Create application bundle directory structure in build directory
+-- and copy executable into it.  Returns path to newly created
+-- directory.
+createAppDir :: LocalBuildInfo -> MacApp -> IO FilePath
+createAppDir localb app =
+  do putStrLn $ "Creating application bundle directory " ++ appPath
+     createDirectoryIfMissing False appPath
+     createDirectoryIfMissing True  $ takeDirectory exeDest
+     -- XXX always next line?  Or only if resources present?
+     createDirectoryIfMissing True  $ appPath </> "Contents/Resources"
+     putStrLn $ "Copying executable " ++ appName app ++ " into place"
+     copyFile exeSrc exeDest
+     return appPath
+  where appPath = buildDir localb </> appName app <.> "app"
+        exeDest = appPath </> pathInApp app (appName app)
+        exeSrc = buildDir localb </> appName app </> appName app
 
 -- ----------------------------------------------------------------------
 -- customisations
