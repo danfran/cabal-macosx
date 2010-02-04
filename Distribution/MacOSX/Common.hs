@@ -1,5 +1,6 @@
 module Distribution.MacOSX.Common where
 
+import Data.List
 import System.FilePath
 
 -- | Mac OSX application information.
@@ -17,17 +18,32 @@ data MacApp = MacApp {
   -- omitted, and if 'appIcon' is specified, a basic default plist
   -- will be used.
   appPlist :: Maybe FilePath,
+  -- | Other resources to bundle in the application, e.g. image files,
+  -- etc.  Each will be copied to @Contents\/Resources\/@, with the
+  -- proviso that if the resource path begins with @resources\/@, it
+  -- will go to a /relative/ subdirectory of @Contents\/Resources\/@.
+  -- For example, @images/splash.png@ will be copied to
+  -- @Contents\/Resources\/splash.png@, whereas
+  -- @resources\/images\/splash.png@ will be copied to
+  -- @Contents\/Resources\/resources\/images\/splash.png@.
+  --
+  -- Bundled resources may be referred to from your program relative
+  -- to your executable's path (which may be computed, e.g., using
+  -- Audrey Tang's FindBin package).
+  resources :: [FilePath],
   -- | Other binaries to bundle in the application, e.g.  other
   -- executables from your project, or third-party programs.  Each
   -- will be copied to a relative sub-directory of
-  -- @Contents\/Resources\/@ in the bundle, and may be referred to
-  -- from your program relative to your executable's path (which may
-  -- be computed, e.g., using Audrey Tang's FindBin package).  For
-  -- example, @\/usr\/bin\/ftp@ would be copied to
+  -- @Contents\/Resources\/@ in the bundle.  For example,
+  -- @\/usr\/bin\/ftp@ would be copied to
   -- @Contents\/Resources\/usr\/bin\/ftp@ in the app.
+  --
+  -- Like 'resources', bundled binaries may be referred to from your
+  -- program relative to your executable's path (which may be
+  -- computed, e.g., using Audrey Tang's FindBin package).
   otherBins :: [FilePath],
   -- | Controls inclusion of library dependencies for executable and
-  -- @otherBins@; see below.
+  -- 'otherBins'; see below.
   appDeps :: ChaseDeps
   } deriving (Eq, Show)
 
@@ -95,5 +111,10 @@ pathInApp :: MacApp -> FilePath -> FilePath
 pathInApp app p
   | p == appName app = "Contents/MacOS" </> p
   | p `elem` otherBins app = "Contents/Resources" </> relP
+  | p `elem` resources app = 
+    let p' = if "resources/" `isPrefixOf` p then
+               makeRelative "resources/" p
+             else takeFileName p
+    in "Contents/Resources" </> p'
   | otherwise = "Contents/Frameworks" </> relP
   where relP = makeRelative "/" p

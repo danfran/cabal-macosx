@@ -62,10 +62,7 @@ Using this module:
 -- nothing is excluded (use with caution).
 --
 module Distribution.MacOSX.Dependencies (
-  Exclusions,
-  defaultExclusions,
   includeDependencies,
-  DG(..),
   appDependencyGraph
 ) where
 
@@ -79,6 +76,12 @@ import Text.ParserCombinators.Parsec
 
 import Distribution.MacOSX.Common
 import Distribution.MacOSX.DG
+
+-- | Ordinary paths to necessary tools.  Should always be in these
+-- locations, so shouldn't be worth parameterising.
+oTool, iTool :: FilePath
+oTool = "/usr/bin/otool"
+iTool = "/usr/bin/install_name_tool"
 
 includeDependencies :: FilePath -> MacApp -> IO ()
 includeDependencies appPath app =
@@ -126,12 +129,6 @@ addFilesDependencies appPath app dg p excls =
   do (FDeps _ tgts) <- getFDeps appPath app p excls
      let dg' = dgAddFDeps dg (FDeps p tgts)
      return (dg', tgts)
-
-
-
-oTool, iTool :: FilePath
-oTool = "/usr/bin/otool"
-iTool = "/usr/bin/install_name_tool"
 
 -- | Get the library dependencies for some file, removing any
 -- exclusions.

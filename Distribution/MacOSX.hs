@@ -2,8 +2,8 @@
 
 GUI applications on Mac OSX should be run as application /bundles/;
 these wrap an executable in a particular directory structure which can
-also carry resources such as icons, program metadata, other binaries,
-and copies of shared libraries.
+also carry resources such as icons, program metadata, images, other
+binaries, and copies of shared libraries.
 
 This module provides a Cabal post-build hook for creating such
 application bundles, and controlling their contents.
@@ -23,13 +23,13 @@ module Distribution.MacOSX (
 ) where
 
 import Control.Monad (forM_)
-import Data.String.Utils
+import Data.String.Utils (replace)
 import Distribution.PackageDescription (PackageDescription(..),
                                         Executable(..))
 import Distribution.Simple
 import Distribution.Simple.LocalBuildInfo (LocalBuildInfo(..))
 import Distribution.Simple.Setup (BuildFlags)
-import System.Cmd
+import System.Cmd (system)
 import System.FilePath
 import System.Info (os)
 import System.Directory (copyFile, createDirectoryIfMissing)
@@ -52,7 +52,7 @@ appBundleBuildHook apps _ _ pkg localb =
       where apps' = case apps of
                       [] -> map mkDefault $ executables pkg
                       xs -> xs
-            mkDefault x = MacApp (exeName x) Nothing Nothing [] DoNotChase
+            mkDefault x = MacApp (exeName x) Nothing Nothing [] [] DoNotChase
     _ -> putStrLn "Not OS X, so not building an application bundle."
 
 -- | Given a 'MacApp' in context, make an application bundle in the
@@ -60,11 +60,12 @@ appBundleBuildHook apps _ _ pkg localb =
 makeAppBundle :: LocalBuildInfo -> MacApp -> IO ()
 makeAppBundle localb app =
   do appPath <- createAppDir localb app
-     includeDependencies appPath app
      maybeCopyPlist appPath app
      maybeCopyIcon appPath app
        `catch` \err -> putStrLn ("Warning: could not set up icon for " ++
                                  appName app ++ ": " ++ show err)
+     includeResources appPath app
+     includeDependencies appPath app
      osxIncantations appPath app
 
 -- | Create application bundle directory structure in build directory
@@ -83,6 +84,17 @@ createAppDir localb app =
   where appPath = buildDir localb </> appName app <.> "app"
         exeDest = appPath </> pathInApp app (appName app)
         exeSrc = buildDir localb </> appName app </> appName app
+
+-- | Include any external resources specified.
+includeResources :: FilePath -> MacApp -> IO ()
+includeResources appPath app = mapM_ includeResource $ resources app
+    where includeResource :: FilePath -> IO ()
+          includeResource p =
+            do let pDest = appPath </> pathInApp app p
+               putStrLn $ "Copying resource " ++ p ++ " to " ++ pDest
+               createDirectoryIfMissing True $ takeDirectory pDest
+               copyFile p $ pDest
+               return ()
 
 -- | If a plist has been specified, copy it into place.  If not, but
 -- an icon has been specified, construct a default shell plist so the
