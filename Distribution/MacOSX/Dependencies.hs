@@ -80,15 +80,6 @@ import Text.ParserCombinators.Parsec
 import Distribution.MacOSX.Common
 import Distribution.MacOSX.DG
 
--- | Standard list of libraries not to include.
-defaultExclusions :: Exclusions
-defaultExclusions = 
-  ["/System/Library/Frameworks/",
-   "/libSystem.",
-   "/libgcc_s.",
-   "/libobjc."
-  ]
-
 includeDependencies :: FilePath -> MacApp -> IO ()
 includeDependencies appPath app =
   do dg <- appDependencyGraph appPath app

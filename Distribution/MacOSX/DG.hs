@@ -1,4 +1,8 @@
--- | Basic dependency graph manipulation.
+{- | Dependency graphs for cabal-macosx.
+
+
+
+-}
 
 module Distribution.MacOSX.DG (
   DG(..),

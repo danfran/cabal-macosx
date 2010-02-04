@@ -22,10 +22,12 @@ dist/build:		$(HASKELLS) dist/setup-config
 configure:		$(HASKELLS) dist/setup-config
 
 $(HADDOCKS)/index.html:	configure
-			runghc Setup haddock --hyperlink-source \
-			  --haddock-option=--ignore-all-exports
+			runghc Setup haddock --hyperlink-source
 
 haddock:		$(HADDOCKS)/index.html
+
+haddockall:		configure
+			runghc Setup haddock --hyperlink-source --internal
 
 build:			dist/build
 

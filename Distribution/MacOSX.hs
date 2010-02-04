@@ -1,17 +1,25 @@
-{- | Helpers for Mac OS X app distribution via Cabal.
+{- | Cabal support for creating Mac OSX application bundles.
 
-'appBundleBuildHook' controls building application bundles for
-whichever executables need them, possibly including customisations
-(e.g. icon).
+GUI applications on Mac OSX should be run as application /bundles/;
+these wrap an executable in a particular directory structure which can
+also carry resources such as icons, program metadata, other binaries,
+and copies of shared libraries.
+
+This module provides a Cabal post-build hook for creating such
+application bundles, and controlling their contents.
+
+For more information about OSX application bundles, look for the
+/Bundle Programming Guide/ on the /Apple Developer Connection/
+website, <http://developer.apple.com/>.
 
 -}
 
 module Distribution.MacOSX (
+  appBundleBuildHook,
   MacApp(..),
   ChaseDeps(..),
   Exclusions,
-  defaultExclusions,
-  appBundleBuildHook,
+  defaultExclusions
 ) where
 
 import Control.Monad (forM_)
@@ -32,11 +40,11 @@ import Distribution.MacOSX.Dependencies
 -- | Post-build hook for OS X application bundles.  Does nothing if
 -- called on another O/S.
 appBundleBuildHook ::
-  [MacApp] -- ^ List of executables to build application bundles for;
-           -- if empty, build for all executables in the package, with
-           -- no icon or plist, and no dependency-chasing.
+  [MacApp] -- ^ List of applications to build; if empty, an
+           -- application is built for each executable in the package,
+           -- with no icon or plist, and no dependency-chasing.
   -> Args -- ^ All other parameters as per
-          -- 'Distribution.Simple.postInst'.
+          -- 'Distribution.Simple.postBuild'.
   -> BuildFlags -> PackageDescription -> LocalBuildInfo -> IO ()
 appBundleBuildHook apps _ _ pkg localb =
   case os of

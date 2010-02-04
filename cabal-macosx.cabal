@@ -1,9 +1,21 @@
 Name:                   cabal-macosx
 Version:                0.1.0
 Stability:              Alpha
-Synopsis:               Build/installation helpers for Mac OS X.
+Synopsis:               Cabal support for creating Mac OSX application bundles.
 Description:
-    Build/installation helpers for Mac OS X.
+
+    GUI applications on Mac OSX must be run as application /bundles/;
+    these wrap an executable in a particular directory structure which
+    can also carry resources such as icons, program metadata, other
+    binaries, and copies of shared libraries.
+
+    This package provides Cabal support for creating such application
+    bundles.
+
+    For more information about OSX application bundles, look for the
+    /Bundle Programming Guide/ on the /Apple Developer Connection/
+    website, <http://developer.apple.com/>.
+
 Category:               Data
 License:                BSD3
 License-file:           LICENSE
@@ -19,7 +31,7 @@ Source-Repository head
 
 Library
   Build-Depends:   base >= 4 && < 5, Cabal >= 1.6, directory, fgl,
-                   filepath, MissingH, parsec, process, unix
+                   filepath, MissingH, parsec, process
   Exposed-modules: Distribution.MacOSX
   Other-modules:   Distribution.MacOSX.Common,
                    Distribution.MacOSX.Dependencies,
