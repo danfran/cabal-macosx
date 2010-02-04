@@ -57,7 +57,8 @@ appBundleBuildHook apps _ _ pkg localb =
 
 -- | Given a 'MacApp' in context, make an application bundle in the
 -- build area.
-makeAppBundle :: LocalBuildInfo -> MacApp -> IO ()
+makeAppBundle ::
+  LocalBuildInfo -> MacApp -> IO ()
 makeAppBundle localb app =
   do appPath <- createAppDir localb app
      maybeCopyPlist appPath app
@@ -76,7 +77,6 @@ createAppDir localb app =
   do putStrLn $ "Creating application bundle directory " ++ appPath
      createDirectoryIfMissing False appPath
      createDirectoryIfMissing True  $ takeDirectory exeDest
-     -- XXX always next line?  Or only if resources present?
      createDirectoryIfMissing True  $ appPath </> "Contents/Resources"
      putStrLn $ "Copying executable " ++ appName app ++ " into place"
      copyFile exeSrc exeDest
@@ -86,7 +86,9 @@ createAppDir localb app =
         exeSrc = buildDir localb </> appName app </> appName app
 
 -- | Include any external resources specified.
-includeResources :: FilePath -> MacApp -> IO ()
+includeResources ::
+  FilePath -- ^ Path to application bundle root.
+  -> MacApp -> IO ()
 includeResources appPath app = mapM_ includeResource $ resources app
     where includeResource :: FilePath -> IO ()
           includeResource p =
@@ -99,7 +101,9 @@ includeResources appPath app = mapM_ includeResource $ resources app
 -- | If a plist has been specified, copy it into place.  If not, but
 -- an icon has been specified, construct a default shell plist so the
 -- icon is honoured.
-maybeCopyPlist :: FilePath -> MacApp -> IO ()
+maybeCopyPlist ::
+  FilePath -- ^ Path to application bundle root.
+  -> MacApp -> IO ()
 maybeCopyPlist appPath app =
   case appPlist app of
     Just plPath -> do -- Explicit plist path, so copy it in and assume OK.
@@ -108,15 +112,17 @@ maybeCopyPlist appPath app =
     Nothing -> case appIcon app of
                  Just icPath ->
                    do -- Need a plist to support icon; use default.
-                     let plist = replace "$iconPath" (takeFileName icPath) $
-                                   replace "$program" (appName app) plistTemplate
-                     writeFile plDest plist
+                     let pl = replace "$program" (appName app) plistTemplate
+                         pl' = replace "$iconPath" (takeFileName icPath) pl
+                     writeFile plDest pl'
                      return ()
                  Nothing -> return () -- No icon, no plist, nothing to do.
     where plDest = appPath </> "Contents/Info.plist"
 
 -- | If an icon file has been specified, copy it into place.
-maybeCopyIcon :: FilePath -> MacApp -> IO ()
+maybeCopyIcon ::
+  FilePath -- ^ Path to application bundle root.
+  -> MacApp -> IO ()
 maybeCopyIcon appPath app =
   case appIcon app of
     Just icPath ->
@@ -125,20 +131,26 @@ maybeCopyIcon appPath app =
                   appPath </> "Contents/Resources" </> takeFileName icPath
     Nothing -> return ()
 
-rez, setFile :: FilePath
-rez = "/Developer/Tools/Rez"
-setFile = "/Developer/Tools/SetFile"
-
 -- | Perform various magical OS X incantations for turning the app
 -- directory into a bundle proper.
-osxIncantations :: FilePath -> MacApp -> IO ()
+osxIncantations ::
+  FilePath -- ^ Path to application bundle root.
+  -> MacApp -> IO ()
 osxIncantations appPath app =
   do putStrLn "Performing OS X voodoo"
      system $ rez ++ " Carbon.r -o " ++ appPath </> pathInApp app (appName app)
      writeFile (appPath </> "PkgInfo") "APPL????"
-     -- tell Finder about the icon
+     -- Tell Finder about the icon.
      system $ setFile ++ " -a C " ++ appPath </> "Contents"
      return ()
+
+-- | Path to @Rez@ tool.
+rez :: FilePath
+rez = "/Developer/Tools/Rez"
+
+-- | Path to @SetFile@ tool.
+setFile :: FilePath
+setFile = "/Developer/Tools/SetFile"
 
 -- | Default plist template, based on that in macosx-app from wx (but
 -- with version stuff removed).

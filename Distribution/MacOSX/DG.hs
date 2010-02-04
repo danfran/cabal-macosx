@@ -1,8 +1,4 @@
-{- | Dependency graphs for cabal-macosx.
-
-
-
--}
+-- | Dependency graph handling.
 
 module Distribution.MacOSX.DG (
   DG(..),
@@ -18,14 +14,26 @@ import Data.Graph.Inductive.Tree (Gr)
 import Data.List
 import Data.Maybe
 
--- | A dependency graph has filepaths on its nodes, and directed
--- edges.  An edge from A to B indicates that A depends on B.
+-- | A dependency graph is an ordinary fgl graph with 'FilePath's on
+-- its nodes, and directed edges.  An edge from A to B indicates that
+-- A depends on B.
 data DG = DG (Gr FilePath ())
           deriving Show
 
--- | An FDeps is some file and all the libraries it depends on.
+-- | An FDeps represents some file and its list of library
+-- dependencies.
 data FDeps = FDeps FilePath [FilePath]
              deriving (Eq, Ord, Show)
+
+-- | Add a file dependency to a dependency graph.
+dgAddFDeps :: DG -> FDeps -> DG
+dgAddFDeps dg (FDeps src tgts) = dgAddDeps src tgts $ dg `dgAddPaths` (src:tgts)
+
+-- | Turn a dependency graph back into a list of FDeps.
+dgFDeps :: DG -> [FDeps]
+dgFDeps (DG g) = map mkFDep (G.labNodes g)
+  where mkFDep :: G.LNode FilePath -> FDeps
+        mkFDep (i, src) = FDeps src $ mapMaybe (G.lab g) (G.suc g i)
 
 -- | Create an empty dependency graph.
 dgEmpty :: DG
@@ -43,11 +51,7 @@ dgHasPath dg p = case dgPathIdx dg p of
                    Just _ -> True
                    Nothing -> False
 
--- | Add a file dependency to a dependency graph.
-dgAddFDeps :: DG -> FDeps -> DG
-dgAddFDeps dg (FDeps src tgts) = dgAddDeps src tgts $ dg `dgAddPaths` (src:tgts)
-
--- | Add a list of paths as nodes to a dependency graph, ignoring
+-- | Add a list of paths as nodes to a dependency graph, dropping
 -- duplicates.
 dgAddPaths :: DG -> [FilePath] -> DG
 dgAddPaths = foldl dgAddPath
@@ -69,9 +73,3 @@ dgAddDep dg@(DG g) (src, tgt) = DG $ G.insEdge (getI src, getI tgt, ()) g
   where getI x = case dgPathIdx dg x of
                    Just x' -> x'
                    Nothing -> error "Can't happen" -- if called in context.
-
--- | Turn a dependency graph back into a list of FDeps.
-dgFDeps :: DG -> [FDeps]
-dgFDeps (DG g) = map mkFDep (G.labNodes g)
-  where mkFDep :: G.LNode FilePath -> FDeps
-        mkFDep (i, src) = FDeps src $ mapMaybe (G.lab g) (G.suc g i)
