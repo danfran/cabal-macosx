@@ -1,0 +1,29 @@
+Example: wxHello-cpp
+====================
+
+This is a modified version of the wxHello example which shows how to
+remove the dependency on cabal-macosx when on non-OSX platforms.
+
+cabal-macosx is only relevant on OSX; if used on any other platform,
+it does nothing.  Thus, you can always safely include it in your
+program's Build-Depends and Setup.hs, whatever the target platform.
+However, you might not want to do that.  This example shows how to
+modify your .cabal file and your Setup.hs so that cabal-macosx is only
+required on OSX.
+
+There are three changes necessary to create this platform-sensitivity:
+
+  1. wxHello.cabal is modified so that cabal-macosx is only in the
+     Build-Depends list if the O/S is darwin.
+
+  2. Setup.hs is modified so that cabal-macosx code is only imported
+     and compiled if the O/S is darwin.
+
+  3. Calls to runghc Setup.hs are given the -cpp flag to invoke the C
+     preprocessor, eg: "runghc -cpp Setup configure".
+
+In all other respects this example is identical to the plain wxHello
+example.
+
+Please see the README for the plain wxHello example for any further
+information.

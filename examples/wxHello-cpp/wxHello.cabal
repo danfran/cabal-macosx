@@ -1,11 +1,11 @@
 Name:                   wxHello
 Version:                0.1.0
 Stability:              Alpha
-Synopsis:               wxWidgets `Hello World' example for cabal-macosx
+Synopsis:               Platform-sensitive version of wxHello example.
 Description:
-    Example showing how to use cabal-macosx to build an application
-    bundle for a simple `Hello World' program using the wxWidgets GUI
-    toolkit.
+    Modified version of wxHello example demonstrating how to make
+    dependency on cabal-macosx platform senstitive.  Please see the
+    README for more information.
 Category:               Data
 License:                BSD3
 License-file:           LICENSE
@@ -18,5 +18,8 @@ Cabal-Version:          >=1.6
 Executable WxHello
   hs-source-dirs:       src
   Main-is:              Main.hs
-  Build-Depends:        base >= 3 && < 5, cabal-macosx, wx
+  if os(darwin)
+    Build-Depends:        base >= 3 && < 5, cabal-macosx, wx
+  else
+    Build-Depends:        base >= 3 && < 5, wx
   ghc-options:          -fwarn-tabs -threaded -Wall
