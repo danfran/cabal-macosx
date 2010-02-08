@@ -6,17 +6,8 @@ import Distribution.Simple
 
 main :: IO ()
 main = defaultMainWithHooks $ simpleUserHooks {
-         postBuild = appBundleBuildHook guiApps
+         postBuild = appBundleBuildHook guiApps -- no-op if not MacOS X
        }
-
--- Checking by hand for OSX in Setup.hs no longer necessary.
-
--- main = defaultMainWithHooks $ addMacHook simpleUserHooks
---   where addMacHook h =
---           case os of
---             -- Here darwin == Mac OS X.  Is that OK?
---             "darwin" -> h { postBuild = appBundleBuildHook guiApps }
---             _        -> h
 
 guiApps :: [MacApp]
 guiApps = [MacApp "WxHello"
