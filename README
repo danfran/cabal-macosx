@@ -4,3 +4,8 @@ Setup.hs for Mac OSX
 Branched from http://code.haskell.org/GenI/Setup.hs
 and
 http://www.mail-archive.com/wxhaskell-users@lists.sourceforge.net/msg00701.html
+
+The package is extensively documented, including internally.  If
+you're interested in modifying it, you may want to runghc Setup
+haddock --hyperlink-source --internal to produce full internal
+documentation.
