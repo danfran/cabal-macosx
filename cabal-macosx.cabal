@@ -16,12 +16,13 @@ Description:
     /Bundle Programming Guide/ on the /Apple Developer Connection/
     website, <http://developer.apple.com/>.
 
-Category:               Data
+Category:               Distribution
 License:                BSD3
 License-file:           LICENSE
 Copyright:              Eric Kow & Andy Gimblett
-Author:                 Eric Kow <eric.kow@gmail.com>
+Author:                 Eric Kow <eric.kow@gmail.com> & Andy Gimblett <haskell@gimbo.org.uk>
 Maintainer:             Andy Gimblett <haskell@gimbo.org.uk>
+Homepage:               http://github.com/gimbo/cabal-macosx
 Build-Type:             Simple
 Cabal-Version:          >=1.6
 
