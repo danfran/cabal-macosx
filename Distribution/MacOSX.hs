@@ -137,7 +137,7 @@ osxIncantations ::
   FilePath -- ^ Path to application bundle root.
   -> MacApp -> IO ()
 osxIncantations appPath app =
-  do putStrLn "Performing OS X voodoo"
+  do putStrLn "Running Rez, etc."
      system $ rez ++ " Carbon.r -o " ++ appPath </> pathInApp app (appName app)
      writeFile (appPath </> "PkgInfo") "APPL????"
      -- Tell Finder about the icon.

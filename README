@@ -1,7 +1,22 @@
-Setup.hs for Mac OSX
-====================
+cabal-macosx: Cabal hooks for Mac OSX
+=====================================
 
-Branched from http://code.haskell.org/GenI/Setup.hs
+This package provides a Cabal post-build hook for building application
+bundles for GUIs on Mac OSX.
+
+Under Mac OSX, graphical applications require certain infrastructure
+in order to run properly: you can't just build an executable and run
+it (as on Linux, say), but must instead wrap it up in an application
+bundle, which is a directory having certain structure and marked as an
+app using a particular tool.  This package provides Cabal post-build
+hook infrastructure for creating such bundles automatically,
+optionally including icons, other resources, and even local copies of
+shared libraries (for building apps which may be distributed
+standalone).
+
+--
+
+This code was branched from http://code.haskell.org/GenI/Setup.hs
 and
 http://www.mail-archive.com/wxhaskell-users@lists.sourceforge.net/msg00701.html
 
@@ -9,3 +24,7 @@ The package is extensively documented, including internally.  If
 you're interested in modifying it, you may want to runghc Setup
 haddock --hyperlink-source --internal to produce full internal
 documentation.
+
+--
+Andy Gimblett
+2010.02.16
