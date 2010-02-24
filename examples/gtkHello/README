@@ -1,8 +1,8 @@
-Example: wxHello
-================
+Example: gtkHello
+=================
 
 This example illustrates the use of cabal-macosx for building a
-graphical OS X application based on the wxWidgets toolkit.  The
+graphical OS X application based on the gtk2hs toolkit.  The
 application in question is a basic `Hello World'.
 
 To build the application, follow the usual steps:
@@ -13,6 +13,6 @@ To build the application, follow the usual steps:
 This will create an application bundle in dist, which can be run from
 the terminal
 
-    open ./dist/build/WxHello.app
+    open ./dist/build/GtkHello.app
 
 or copied elsewhere and run via the finder.

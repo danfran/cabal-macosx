@@ -1,0 +1,22 @@
+Name:                   gtkHello
+Version:                0.1.0
+Stability:              Alpha
+Synopsis:               gtkWidgets `Hello World' example for cabal-macosx
+Description:
+    Example showing how to use cabal-macosx to build an application
+    bundle for a simple `Hello World' program using the gtk2hs GUI
+    toolkit.
+Category:               Data
+License:                BSD3
+License-file:           LICENSE
+Copyright:              Andy Gimblett <haskell@gimbo.org.uk>
+Author:                 Andy Gimblett <haskell@gimbo.org.uk>
+Maintainer:             Andy Gimblett <haskell@gimbo.org.uk>
+Build-Type:             Custom
+Cabal-Version:          >=1.6
+
+Executable GtkHello
+  hs-source-dirs:       src
+  Main-is:              Main.hs
+  Build-Depends:        base >= 3 && < 5, cabal-macosx, gtk
+  ghc-options:          -fwarn-tabs -Wall
