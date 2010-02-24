@@ -1,6 +1,8 @@
 cabal-macosx Examples
 =====================
 
+  gtkHello - basic gtk2hs example, demonstrating ordinary usage.
+
   wxHello - basic wx example, demonstrating ordinary usage.
 
   wxHello-cpp - same, but with wxHello.cabal and Setup.hs modified so
