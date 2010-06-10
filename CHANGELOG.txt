@@ -1,0 +1,10 @@
+v0.1.1, 2010.06.10
+
+Fixed dependency on fgl to v5.4.2.2 as advised by fgl maintainers, in
+anticipation of future API incompatabilities.
+
+--
+
+v0.1.0, 2010.02.16
+
+Initial release.
