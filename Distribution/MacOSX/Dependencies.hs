@@ -62,9 +62,9 @@ module Distribution.MacOSX.Dependencies (
 
 import Control.Monad
 import Data.List
+import Data.Maybe
 import System.Directory
 import System.FilePath
-import System.IO
 import System.Process
 import Text.ParserCombinators.Parsec
 
@@ -150,15 +150,24 @@ getFDeps appPath app path exclusions =
                   else path
         parseFileDeps :: Parser FDeps
         parseFileDeps = do f <- manyTill (noneOf ":") (char ':')
-                           char '\n'
-                           deps <- parseDep `sepEndBy` char '\n'
+                           _ <- char '\n'
+                           deps <- parseDepOrName `sepEndBy` char '\n'
                            eof
-                           return $ FDeps f deps
+                           return $ FDeps f $ filter (f /=) $ catMaybes deps
+        parseDepOrName :: Parser (Maybe FilePath)
+        parseDepOrName = do c <- oneOf "\t/"
+                            case c of
+                              '\t' -> -- A dependency.
+                                      do dep <- parseDep
+                                         return $ Just dep
+                              '/' -> -- Same filename, alternative arch
+                                     do _ <- manyTill (noneOf ":") (char ':')
+                                        return Nothing
+                              _ -> error "Can't happen"
         parseDep :: Parser FilePath
-        parseDep = do char '\t'
-                      dep <- manyTill (noneOf " ") (char ' ')
-                      char '('
-                      manyTill (noneOf ")") (char ')')
+        parseDep = do dep <- manyTill (noneOf " ") (char ' ')
+                      _ <- char '('
+                      _ <- manyTill (noneOf ")") (char ')')
                       return dep
 
 -- | Apply an exclusion list to an 'FDeps' value; any dependencies
