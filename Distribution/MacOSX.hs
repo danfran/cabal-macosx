@@ -33,6 +33,7 @@ import System.Cmd (system)
 import System.FilePath
 import System.Info (os)
 import System.Directory (copyFile, createDirectoryIfMissing)
+import System.Exit
 
 import Distribution.MacOSX.Common
 import Distribution.MacOSX.Dependencies
@@ -138,10 +139,11 @@ osxIncantations ::
   -> MacApp -> IO ()
 osxIncantations appPath app =
   do putStrLn "Running Rez, etc."
-     system $ rez ++ " Carbon.r -o " ++ appPath </> pathInApp app (appName app)
+     ExitSuccess <- system $ rez ++ " Carbon.r -o " ++
+       appPath </> pathInApp app (appName app)
      writeFile (appPath </> "PkgInfo") "APPL????"
      -- Tell Finder about the icon.
-     system $ setFile ++ " -a C " ++ appPath </> "Contents"
+     ExitSuccess <- system $ setFile ++ " -a C " ++ appPath </> "Contents"
      return ()
 
 -- | Path to @Rez@ tool.
