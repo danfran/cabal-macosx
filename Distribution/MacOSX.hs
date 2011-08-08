@@ -48,13 +48,16 @@ appBundleBuildHook ::
           -- 'Distribution.Simple.postBuild'.
   -> BuildFlags -> PackageDescription -> LocalBuildInfo -> IO ()
 appBundleBuildHook apps _ _ pkg localb =
-  case os of
-    "darwin" -> forM_ apps' $ makeAppBundle localb
-      where apps' = case apps of
+  if isMacOS
+     then forM_ apps' $ makeAppBundle localb
+     else putStrLn "Not OS X, so not building an application bundle."
+  where apps' = case apps of
                       [] -> map mkDefault $ executables pkg
                       xs -> xs
-            mkDefault x = MacApp (exeName x) Nothing Nothing [] [] DoNotChase
-    _ -> putStrLn "Not OS X, so not building an application bundle."
+        mkDefault x = MacApp (exeName x) Nothing Nothing [] [] DoNotChase
+
+isMacOS :: Bool
+isMacOS = os == "darwin"
 
 -- | Given a 'MacApp' in context, make an application bundle in the
 -- build area.
