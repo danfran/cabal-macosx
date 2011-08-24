@@ -27,7 +27,7 @@ import Data.String.Utils (replace)
 import Distribution.PackageDescription (PackageDescription(..),
                                         Executable(..))
 import Distribution.Simple
-import Distribution.Simple.InstallDirs (prefix, CopyDest(NoCopyDest))
+import Distribution.Simple.InstallDirs (bindir, prefix, CopyDest(NoCopyDest))
 import Distribution.Simple.LocalBuildInfo (absoluteInstallDirs, LocalBuildInfo(..))
 import Distribution.Simple.Setup (BuildFlags, InstallFlags,
                                   fromFlagOrDefault, installVerbosity
@@ -81,9 +81,19 @@ appBundleInstallHook apps _ iflags pkg localb = do
         exe ap = ap </> pathInApp app (appName app)
     installDirectoryContents verbosity appPathSrc appPathTgt
     installExecutableFile    verbosity (exe appPathSrc) (exe appPathTgt)
+    -- generate a tiny shell script for users who expect to run their
+    -- applications from the command line with flags and all
+    let script = "`dirname $0`" </> "../Applications"
+                                </> takeFileName appPathSrc
+                                </> "Contents/MacOS" </> appName app
+                 ++ " \"$@\""
+        scriptFileSrc = buildDir localb   </> "_" ++ appName app <.> "sh"
+        scriptFileTgt = bindir installDir </> appName app
+    writeFile scriptFileSrc script
+    installExecutableFile verbosity scriptFileSrc scriptFileTgt
   where
-    applicationsDir = prefix (absoluteInstallDirs pkg localb NoCopyDest)
-                      </> "Applications"
+    installDir = absoluteInstallDirs pkg localb NoCopyDest
+    applicationsDir = prefix installDir </> "Applications"
 
 isMacOS :: Bool
 isMacOS = os == "darwin"
