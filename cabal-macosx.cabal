@@ -1,5 +1,5 @@
 Name:                   cabal-macosx
-Version:                0.1.1
+Version:                0.1.2
 Stability:              Alpha
 Synopsis:               Cabal support for creating Mac OSX application bundles.
 Description:
@@ -31,8 +31,9 @@ Source-Repository head
     Location:     http://github.com/gimbo/cabal-macosx
 
 Library
-  Build-Depends:   base >= 4 && < 5, Cabal >= 1.6, directory, fgl == 5.4.2.2,
-                   filepath, MissingH, parsec, process
+  Build-Depends:   base >= 4 && < 5, Cabal >= 1.6, directory
+               ,   fgl >= 5.4.2.2 && < 5.5
+               ,   filepath, MissingH, parsec, process
   Exposed-modules: Distribution.MacOSX
   Other-modules:   Distribution.MacOSX.Common,
                    Distribution.MacOSX.Dependencies,

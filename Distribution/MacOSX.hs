@@ -15,7 +15,7 @@ website, <http://developer.apple.com/>.
 -}
 
 module Distribution.MacOSX (
-  appBundleBuildHook,
+  appBundleBuildHook, appBundleInstallHook,
   MacApp(..),
   ChaseDeps(..),
   Exclusions,
@@ -27,8 +27,13 @@ import Data.String.Utils (replace)
 import Distribution.PackageDescription (PackageDescription(..),
                                         Executable(..))
 import Distribution.Simple
-import Distribution.Simple.LocalBuildInfo (LocalBuildInfo(..))
-import Distribution.Simple.Setup (BuildFlags)
+import Distribution.Simple.InstallDirs (bindir, prefix, CopyDest(NoCopyDest))
+import Distribution.Simple.LocalBuildInfo (absoluteInstallDirs, LocalBuildInfo(..))
+import Distribution.Simple.Setup (BuildFlags, InstallFlags,
+                                  fromFlagOrDefault, installVerbosity
+                                 )
+import Distribution.Simple.Utils (installDirectoryContents, installExecutableFile)
+import Distribution.Verbosity (normal)
 import System.Cmd (system)
 import System.FilePath
 import System.Info (os)
@@ -48,13 +53,50 @@ appBundleBuildHook ::
           -- 'Distribution.Simple.postBuild'.
   -> BuildFlags -> PackageDescription -> LocalBuildInfo -> IO ()
 appBundleBuildHook apps _ _ pkg localb =
-  case os of
-    "darwin" -> forM_ apps' $ makeAppBundle localb
-      where apps' = case apps of
+  if isMacOS
+     then forM_ apps' $ makeAppBundle localb
+     else putStrLn "Not OS X, so not building an application bundle."
+  where apps' = case apps of
                       [] -> map mkDefault $ executables pkg
                       xs -> xs
-            mkDefault x = MacApp (exeName x) Nothing Nothing [] [] DoNotChase
-    _ -> putStrLn "Not OS X, so not building an application bundle."
+        mkDefault x = MacApp (exeName x) Nothing Nothing [] [] DoNotChase
+
+-- | Post-install hook for OS X application bundles.  Copies the
+-- application bundle (assuming you are also using the appBundleBuildHook)
+-- to @$prefix/Applications@
+-- Does nothing if called on another O/S.
+appBundleInstallHook ::
+  [MacApp] -- ^ List of applications to build; if empty, an
+           -- application is built for each executable in the package,
+           -- with no icon or plist, and no dependency-chasing.
+  -> Args -- ^ All other parameters as per
+          -- 'Distribution.Simple.postInstall'.
+  -> InstallFlags -> PackageDescription -> LocalBuildInfo -> IO ()
+appBundleInstallHook apps _ iflags pkg localb = do
+  let verbosity = fromFlagOrDefault normal (installVerbosity iflags)
+  createDirectoryIfMissing False applicationsDir
+  forM_ apps $ \app -> do
+    let appPathSrc = getAppPath localb app
+        appPathTgt = applicationsDir </> takeFileName appPathSrc
+        exe ap = ap </> pathInApp app (appName app)
+    installDirectoryContents verbosity appPathSrc appPathTgt
+    installExecutableFile    verbosity (exe appPathSrc) (exe appPathTgt)
+    -- generate a tiny shell script for users who expect to run their
+    -- applications from the command line with flags and all
+    let script = "`dirname $0`" </> "../Applications"
+                                </> takeFileName appPathSrc
+                                </> "Contents/MacOS" </> appName app
+                 ++ " \"$@\""
+        scriptFileSrc = buildDir localb   </> "_" ++ appName app <.> "sh"
+        scriptFileTgt = bindir installDir </> appName app
+    writeFile scriptFileSrc script
+    installExecutableFile verbosity scriptFileSrc scriptFileTgt
+  where
+    installDir = absoluteInstallDirs pkg localb NoCopyDest
+    applicationsDir = prefix installDir </> "Applications"
+
+isMacOS :: Bool
+isMacOS = os == "darwin"
 
 -- | Given a 'MacApp' in context, make an application bundle in the
 -- build area.
@@ -82,9 +124,12 @@ createAppDir localb app =
      putStrLn $ "Copying executable " ++ appName app ++ " into place"
      copyFile exeSrc exeDest
      return appPath
-  where appPath = buildDir localb </> appName app <.> "app"
+  where appPath = getAppPath localb app
         exeDest = appPath </> pathInApp app (appName app)
         exeSrc = buildDir localb </> appName app </> appName app
+
+getAppPath :: LocalBuildInfo -> MacApp -> FilePath
+getAppPath localb app = buildDir localb </> appName app <.> "app"
 
 -- | Include any external resources specified.
 includeResources ::
