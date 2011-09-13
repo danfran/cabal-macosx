@@ -22,7 +22,7 @@ module Distribution.MacOSX (
   defaultExclusions
 ) where
 
-import Control.Monad (forM_)
+import Control.Monad (forM_, when)
 import Data.String.Utils (replace)
 import Distribution.PackageDescription (PackageDescription(..),
                                         Executable(..))
@@ -72,7 +72,7 @@ appBundleInstallHook ::
   -> Args -- ^ All other parameters as per
           -- 'Distribution.Simple.postInstall'.
   -> InstallFlags -> PackageDescription -> LocalBuildInfo -> IO ()
-appBundleInstallHook apps _ iflags pkg localb = do
+appBundleInstallHook apps _ iflags pkg localb = when isMacOS $ do
   let verbosity = fromFlagOrDefault normal (installVerbosity iflags)
   createDirectoryIfMissing False applicationsDir
   forM_ apps $ \app -> do
