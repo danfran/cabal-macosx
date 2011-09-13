@@ -1,5 +1,5 @@
 Name:                   cabal-macosx
-Version:                0.1.2
+Version:                0.1.2.1
 Stability:              Alpha
 Synopsis:               Cabal support for creating Mac OSX application bundles.
 Description:
