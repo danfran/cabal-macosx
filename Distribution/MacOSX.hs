@@ -16,6 +16,7 @@ website, <http://developer.apple.com/>.
 
 module Distribution.MacOSX (
   appBundleBuildHook, appBundleInstallHook,
+  makeAppBundle,
   MacApp(..),
   ChaseDeps(..),
   Exclusions,
