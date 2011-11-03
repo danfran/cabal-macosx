@@ -39,3 +39,9 @@ Library
                    Distribution.MacOSX.Dependencies,
                    Distribution.MacOSX.DG
   ghc-options:     -fwarn-tabs -Wall
+
+Executable macosx-app
+  Main-is:         macosx-app.hs
+  Build-Depends:   base >= 4 && < 5, Cabal >= 1.6, directory
+               ,   fgl >= 5.4.2.2 && < 5.5
+               ,   filepath, MissingH, parsec, process

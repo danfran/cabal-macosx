@@ -16,6 +16,7 @@ website, <http://developer.apple.com/>.
 
 module Distribution.MacOSX (
   appBundleBuildHook, appBundleInstallHook,
+  makeAppBundle,
   MacApp(..),
   ChaseDeps(..),
   Exclusions,
@@ -40,6 +41,7 @@ import System.Info (os)
 import System.Directory (copyFile, createDirectoryIfMissing)
 import System.Exit
 
+import Distribution.MacOSX.AppBuildInfo
 import Distribution.MacOSX.Common
 import Distribution.MacOSX.Dependencies
 
@@ -54,7 +56,7 @@ appBundleBuildHook ::
   -> BuildFlags -> PackageDescription -> LocalBuildInfo -> IO ()
 appBundleBuildHook apps _ _ pkg localb =
   if isMacOS
-     then forM_ apps' $ makeAppBundle localb
+     then forM_ apps' $ makeAppBundle . toAppBuildInfo localb
      else putStrLn "Not OS X, so not building an application bundle."
   where apps' = case apps of
                       [] -> map mkDefault $ executables pkg
@@ -76,7 +78,8 @@ appBundleInstallHook apps _ iflags pkg localb = when isMacOS $ do
   let verbosity = fromFlagOrDefault normal (installVerbosity iflags)
   createDirectoryIfMissing False applicationsDir
   forM_ apps $ \app -> do
-    let appPathSrc = getAppPath localb app
+    let appInfo    = toAppBuildInfo localb app
+        appPathSrc = appPath appInfo
         appPathTgt = applicationsDir </> takeFileName appPathSrc
         exe ap = ap </> pathInApp app (appName app)
     installDirectoryContents verbosity appPathSrc appPathTgt
@@ -99,11 +102,10 @@ isMacOS :: Bool
 isMacOS = os == "darwin"
 
 -- | Given a 'MacApp' in context, make an application bundle in the
--- build area.
-makeAppBundle ::
-  LocalBuildInfo -> MacApp -> IO ()
-makeAppBundle localb app =
-  do appPath <- createAppDir localb app
+-- build area. (for internal use only)
+makeAppBundle :: AppBuildInfo -> IO ()
+makeAppBundle appInfo@(AppBuildInfo appPath _ app) =
+  do createAppDir appInfo
      maybeCopyPlist appPath app
      maybeCopyIcon appPath app
        `catch` \err -> putStrLn ("Warning: could not set up icon for " ++
@@ -115,8 +117,8 @@ makeAppBundle localb app =
 -- | Create application bundle directory structure in build directory
 -- and copy executable into it.  Returns path to newly created
 -- directory.
-createAppDir :: LocalBuildInfo -> MacApp -> IO FilePath
-createAppDir localb app =
+createAppDir :: AppBuildInfo -> IO FilePath
+createAppDir (AppBuildInfo appPath exeSrc app) =
   do putStrLn $ "Creating application bundle directory " ++ appPath
      createDirectoryIfMissing False appPath
      createDirectoryIfMissing True  $ takeDirectory exeDest
@@ -124,12 +126,7 @@ createAppDir localb app =
      putStrLn $ "Copying executable " ++ appName app ++ " into place"
      copyFile exeSrc exeDest
      return appPath
-  where appPath = getAppPath localb app
-        exeDest = appPath </> pathInApp app (appName app)
-        exeSrc = buildDir localb </> appName app </> appName app
-
-getAppPath :: LocalBuildInfo -> MacApp -> FilePath
-getAppPath localb app = buildDir localb </> appName app <.> "app"
+  where exeDest = appPath </> pathInApp app (appName app)
 
 -- | Include any external resources specified.
 includeResources ::
