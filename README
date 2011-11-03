@@ -2,7 +2,8 @@ cabal-macosx: Cabal hooks for Mac OSX
 =====================================
 
 This package provides a Cabal post-build hook for building application
-bundles for GUIs on Mac OSX.
+bundles for GUIs on Mac OSX.  It also includes a standalone command
+line utility (macosx-app) for wrapping one-off GUIs that do not use Cabal.
 
 Under Mac OSX, graphical applications require certain infrastructure
 in order to run properly: you can't just build an executable and run
@@ -13,6 +14,10 @@ hook infrastructure for creating such bundles automatically,
 optionally including icons, other resources, and even local copies of
 shared libraries (for building apps which may be distributed
 standalone).
+
+The command line version only provides basic functionality at the
+moment.  It takes a single argument, the path to an executable,
+and produces an application bundle in the current working directory.
 
 --
 
