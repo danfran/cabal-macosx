@@ -1,5 +1,5 @@
 Name:                   cabal-macosx
-Version:                0.1.2.2
+Version:                0.2
 Stability:              Alpha
 Synopsis:               Cabal support for creating Mac OSX application bundles.
 Description:
@@ -36,6 +36,7 @@ Library
                ,   filepath, MissingH, parsec, process
   Exposed-modules: Distribution.MacOSX
   Other-modules:   Distribution.MacOSX.Common,
+                   Distribution.MacOSX.AppBuildInfo,
                    Distribution.MacOSX.Dependencies,
                    Distribution.MacOSX.DG
   ghc-options:     -fwarn-tabs -Wall

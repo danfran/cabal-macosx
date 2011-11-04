@@ -23,6 +23,8 @@ module Distribution.MacOSX (
   defaultExclusions
 ) where
 
+import Control.Exception
+import Prelude hiding ( catch )
 import Control.Monad (forM_, when)
 import Data.String.Utils (replace)
 import Distribution.PackageDescription (PackageDescription(..),
@@ -79,7 +81,7 @@ appBundleInstallHook apps _ iflags pkg localb = when isMacOS $ do
   createDirectoryIfMissing False applicationsDir
   forM_ apps $ \app -> do
     let appInfo    = toAppBuildInfo localb app
-        appPathSrc = appPath appInfo
+        appPathSrc = abAppPath appInfo
         appPathTgt = applicationsDir </> takeFileName appPathSrc
         exe ap = ap </> pathInApp app (appName app)
     installDirectoryContents verbosity appPathSrc appPathTgt
@@ -105,11 +107,11 @@ isMacOS = os == "darwin"
 -- build area. (for internal use only)
 makeAppBundle :: AppBuildInfo -> IO ()
 makeAppBundle appInfo@(AppBuildInfo appPath _ app) =
-  do createAppDir appInfo
+  do _ <- createAppDir appInfo
      maybeCopyPlist appPath app
      maybeCopyIcon appPath app
-       `catch` \err -> putStrLn ("Warning: could not set up icon for " ++
-                                 appName app ++ ": " ++ show err)
+       `catch` \(SomeException err) ->
+          putStrLn $ "Warning: could not set up icon for " ++ appName app ++ ": " ++ show err
      includeResources appPath app
      includeDependencies appPath app
      osxIncantations appPath app
