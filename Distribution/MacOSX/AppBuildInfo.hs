@@ -27,14 +27,14 @@ import Distribution.MacOSX.Dependencies
 --   macosx-app executable without it necessarily having to
 --   know a lot of Cabal internals
 data AppBuildInfo = AppBuildInfo
-  { appPath    :: FilePath
-  , appOrigExe :: FilePath
-  , app        :: MacApp
+  { abAppPath    :: FilePath
+  , abAppOrigExe :: FilePath
+  , abApp        :: MacApp
   }
 
 toAppBuildInfo :: LocalBuildInfo -> MacApp -> AppBuildInfo
-toAppBuildInfo localb app_ = AppBuildInfo
-  { appPath    = buildDir localb </> appName app_ <.> "app"
-  , appOrigExe = buildDir localb </> appName app_ </> appName app_
-  , app        = app_
+toAppBuildInfo localb app = AppBuildInfo
+  { abAppPath    = buildDir localb </> appName app <.> "app"
+  , abAppOrigExe = buildDir localb </> appName app </> appName app
+  , abApp        = app
   }

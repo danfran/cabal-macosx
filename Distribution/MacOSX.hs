@@ -79,7 +79,7 @@ appBundleInstallHook apps _ iflags pkg localb = when isMacOS $ do
   createDirectoryIfMissing False applicationsDir
   forM_ apps $ \app -> do
     let appInfo    = toAppBuildInfo localb app
-        appPathSrc = appPath appInfo
+        appPathSrc = abAppPath appInfo
         appPathTgt = applicationsDir </> takeFileName appPathSrc
         exe ap = ap </> pathInApp app (appName app)
     installDirectoryContents verbosity appPathSrc appPathTgt

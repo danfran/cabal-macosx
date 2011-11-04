@@ -20,9 +20,9 @@ main = do
                        , otherBins = []
                        , appDeps   = DoNotChase
                        } 
-      appInfo = AppBuildInfo { app        = macapp
-                             , appPath    = appName macapp <.> "app"
-                             , appOrigExe = exe
+      appInfo = AppBuildInfo { abApp        = macapp
+                             , abAppPath    = appName macapp <.> "app"
+                             , abAppOrigExe = exe
                              }
   if exeExists
      then makeAppBundle appInfo
