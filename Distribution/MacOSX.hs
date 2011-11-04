@@ -105,7 +105,7 @@ isMacOS = os == "darwin"
 -- build area. (for internal use only)
 makeAppBundle :: AppBuildInfo -> IO ()
 makeAppBundle appInfo@(AppBuildInfo appPath _ app) =
-  do createAppDir appInfo
+  do _ <- createAppDir appInfo
      maybeCopyPlist appPath app
      maybeCopyIcon appPath app
        `catch` \err -> putStrLn ("Warning: could not set up icon for " ++

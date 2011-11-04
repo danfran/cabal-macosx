@@ -1,25 +1,9 @@
 module Distribution.MacOSX.AppBuildInfo where
 
-import Control.Monad (forM_, when)
-import Data.String.Utils (replace)
-import Distribution.PackageDescription (PackageDescription(..),
-                                        Executable(..))
-import Distribution.Simple
-import Distribution.Simple.InstallDirs (bindir, prefix, CopyDest(NoCopyDest))
-import Distribution.Simple.LocalBuildInfo (absoluteInstallDirs, LocalBuildInfo(..))
-import Distribution.Simple.Setup (BuildFlags, InstallFlags,
-                                  fromFlagOrDefault, installVerbosity
-                                 )
-import Distribution.Simple.Utils (installDirectoryContents, installExecutableFile)
-import Distribution.Verbosity (normal)
-import System.Cmd (system)
+import Distribution.Simple.LocalBuildInfo (LocalBuildInfo(..))
 import System.FilePath
-import System.Info (os)
-import System.Directory (copyFile, createDirectoryIfMissing)
-import System.Exit
 
 import Distribution.MacOSX.Common
-import Distribution.MacOSX.Dependencies
 
 -- | Information needed to build a bundle
 --
