@@ -36,6 +36,7 @@ Library
                ,   filepath, MissingH, parsec, process
   Exposed-modules: Distribution.MacOSX
   Other-modules:   Distribution.MacOSX.Common,
+                   Distribution.MacOSX.AppBuildInfo,
                    Distribution.MacOSX.Dependencies,
                    Distribution.MacOSX.DG
   ghc-options:     -fwarn-tabs -Wall
