@@ -23,6 +23,8 @@ module Distribution.MacOSX (
   defaultExclusions
 ) where
 
+import Control.Exception
+import Prelude hiding ( catch )
 import Control.Monad (forM_, when)
 import Data.String.Utils (replace)
 import Distribution.PackageDescription (PackageDescription(..),
@@ -108,8 +110,8 @@ makeAppBundle appInfo@(AppBuildInfo appPath _ app) =
   do _ <- createAppDir appInfo
      maybeCopyPlist appPath app
      maybeCopyIcon appPath app
-       `catch` \err -> putStrLn ("Warning: could not set up icon for " ++
-                                 appName app ++ ": " ++ show err)
+       `catch` \(SomeException err) ->
+          putStrLn $ "Warning: could not set up icon for " ++ appName app ++ ": " ++ show err
      includeResources appPath app
      includeDependencies appPath app
      osxIncantations appPath app
