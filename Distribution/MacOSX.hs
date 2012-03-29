@@ -88,10 +88,26 @@ appBundleInstallHook apps _ iflags pkg localb = when isMacOS $ do
     installExecutableFile    verbosity (exe appPathSrc) (exe appPathTgt)
     -- generate a tiny shell script for users who expect to run their
     -- applications from the command line with flags and all
-    let script = "`dirname $0`" </> "../Applications"
+    let script = unlines [ "#!/bin/bash"
+                         , "COUNTER=0"
+                         , "MAX_DEPTH=256"
+                         , "ZERO=$0"
+                         , "NZERO=`readlink $ZERO`; STATUS=$?"
+                         , ""
+                         , "# The counter is just a safeguard in case I'd done something silly"
+                         , "while [ $STATUS -eq 0 -a $COUNTER -lt $MAX_DEPTH ]; do"
+                         , "  let COUNTER=COUNTER+1"
+                         , "  ZERO=$NZERO"
+                         , "  NZERO=`readlink $ZERO`; STATUS=$?"
+                         , "done"
+                         , "if [ $COUNTER -ge $MAX_DEPTH ]; then"
+                         , "  echo >&2 Urk! exceeded symlink depth of $MAX_DEPTH trying to dereference $0"
+                         , "  exit 1"
+                         , "fi"
+                         , "`dirname $ZERO`" </> "../Applications"
                                 </> takeFileName appPathSrc
-                                </> "Contents/MacOS" </> appName app
-                 ++ " \"$@\""
+                                </> "Contents/MacOS" </> appName app ++ " \"$@\""
+                         ]
         scriptFileSrc = buildDir localb   </> "_" ++ appName app <.> "sh"
         scriptFileTgt = bindir installDir </> appName app
     writeFile scriptFileSrc script
