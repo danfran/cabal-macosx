@@ -27,8 +27,9 @@ import Control.Exception
 import Prelude hiding ( catch )
 import Control.Monad (forM_, when)
 import Data.String.Utils (replace)
-import Distribution.PackageDescription (PackageDescription(..),
-                                        Executable(..))
+import Distribution.PackageDescription (BuildInfo(..),
+                                        Executable(..),
+                                        PackageDescription(..))
 import Distribution.Simple
 import Distribution.Simple.InstallDirs (bindir, prefix, CopyDest(NoCopyDest))
 import Distribution.Simple.LocalBuildInfo (absoluteInstallDirs, LocalBuildInfo(..))
@@ -61,8 +62,12 @@ appBundleBuildHook apps _ _ pkg localb =
      then forM_ apps' $ makeAppBundle . toAppBuildInfo localb
      else putStrLn "Not OS X, so not building an application bundle."
   where apps' = case apps of
-                      [] -> map mkDefault $ executables pkg
+                      [] -> map mkDefault buildables
                       xs -> xs
+        buildables :: [Executable]
+        buildables = filter isBuildable $ executables pkg
+        isBuildable :: Executable -> Bool
+        isBuildable = buildable . buildInfo
         mkDefault x = MacApp (exeName x) Nothing Nothing [] [] DoNotChase
 
 -- | Post-install hook for OS X application bundles.  Copies the
