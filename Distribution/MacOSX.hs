@@ -54,21 +54,30 @@ appBundleBuildHook ::
   [MacApp] -- ^ List of applications to build; if empty, an
            -- application is built for each executable in the package,
            -- with no icon or plist, and no dependency-chasing.
+           -- In any case, apps are only built for executables whose
+           -- buildable flag is True (which they are by default in
+           -- Cabal).
   -> Args -- ^ All other parameters as per
           -- 'Distribution.Simple.postBuild'.
   -> BuildFlags -> PackageDescription -> LocalBuildInfo -> IO ()
 appBundleBuildHook apps _ _ pkg localb =
   if isMacOS
-     then forM_ apps' $ makeAppBundle . toAppBuildInfo localb
+     then case apps' of
+            [] -> putStrLn "No buildable MacApps, so making no bundles."
+            _  -> forM_ apps' $ makeAppBundle . toAppBuildInfo localb
      else putStrLn "Not OS X, so not building an application bundle."
-  where apps' = case apps of
-                      [] -> map mkDefault buildables
-                      xs -> xs
-        buildables :: [Executable]
-        buildables = filter isBuildable $ executables pkg
-        isBuildable :: Executable -> Bool
-        isBuildable = buildable . buildInfo
-        mkDefault x = MacApp (exeName x) Nothing Nothing [] [] DoNotChase
+  where
+    apps' = case apps of
+              [] -> map mkDefault buildables
+              xs -> filter buildableApp xs
+    -- List of buildable executables from .cabal file.
+    buildables :: [Executable]
+    buildables = filter (buildable . buildInfo) $ executables pkg
+    -- Check if a MacApp is in that list of buildable executables.
+    buildableApp :: MacApp -> Bool
+    buildableApp app = any (\e -> exeName e == appName app) buildables
+    -- Make a default MacApp in absence of explicit from Setup.hs
+    mkDefault x = MacApp (exeName x) Nothing Nothing [] [] DoNotChase
 
 -- | Post-install hook for OS X application bundles.  Copies the
 -- application bundle (assuming you are also using the appBundleBuildHook)
