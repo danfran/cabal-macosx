@@ -26,6 +26,7 @@ module Distribution.MacOSX (
 import Control.Exception
 import Prelude hiding ( catch )
 import Control.Monad (forM_, when, filterM)
+import Data.List ( isPrefixOf )
 import Data.String.Utils (replace)
 import Distribution.PackageDescription (PackageDescription(..),
                                         Executable(..))
@@ -40,7 +41,8 @@ import Distribution.Verbosity (normal)
 import System.Cmd (system)
 import System.FilePath
 import System.Info (os)
-import System.Directory (copyFile, createDirectoryIfMissing, doesDirectoryExist)
+import System.Directory (copyFile, createDirectoryIfMissing, doesDirectoryExist,
+                         getHomeDirectory)
 import System.Exit
 
 import Distribution.MacOSX.AppBuildInfo
@@ -78,6 +80,11 @@ appBundleInstallHook ::
   -> InstallFlags -> PackageDescription -> LocalBuildInfo -> IO ()
 appBundleInstallHook apps _ iflags pkg localb = when isMacOS $ do
   let verbosity = fromFlagOrDefault normal (installVerbosity iflags)
+  libraryHaskell  <- flip fmap getHomeDirectory $ (</> "Library/Haskell")
+  let standardPrefix = (libraryHaskell ++ "/") `isPrefixOf` prefix installDir
+  let applicationsDir = if standardPrefix
+                           then libraryHaskell    </> "Applications"
+                           else prefix installDir </> "Applications"
   createDirectoryIfMissing False applicationsDir
   forM_ apps $ \app -> do
     let appInfo    = toAppBuildInfo localb app
@@ -88,34 +95,53 @@ appBundleInstallHook apps _ iflags pkg localb = when isMacOS $ do
     installExecutableFile    verbosity (exe appPathSrc) (exe appPathTgt)
     -- generate a tiny shell script for users who expect to run their
     -- applications from the command line with flags and all
-    let script = unlines [ "#!/bin/bash"
-                         , "COUNTER=0"
-                         , "MAX_DEPTH=256"
-                         , "ZERO=$0"
-                         , "NZERO=`readlink $ZERO`; STATUS=$?"
-                         , ""
-                         , "# The counter is just a safeguard in case I'd done something silly"
-                         , "while [ $STATUS -eq 0 -a $COUNTER -lt $MAX_DEPTH ]; do"
-                         , "  let COUNTER=COUNTER+1"
-                         , "  ZERO=$NZERO"
-                         , "  NZERO=`readlink $ZERO`; STATUS=$?"
-                         , "done"
-                         , "if [ $COUNTER -ge $MAX_DEPTH ]; then"
-                         , "  echo >&2 Urk! exceeded symlink depth of $MAX_DEPTH trying to dereference $0"
-                         , "  exit 1"
-                         , "fi"
-                         , "`dirname $ZERO`" </> "../Applications"
-                                </> takeFileName appPathSrc
-                                </> "Contents/MacOS" </> appName app ++ " \"$@\""
-                         ]
+    let script = if standardPrefix
+                    then bundleScriptLibraryHaskell localb app
+                    else bundleScriptElsewhere      localb app
         scriptFileSrc = buildDir localb   </> "_" ++ appName app <.> "sh"
         scriptFileTgt = bindir installDir </> appName app
     writeFile scriptFileSrc script
     installExecutableFile verbosity scriptFileSrc scriptFileTgt
   where
     installDir = absoluteInstallDirs pkg localb NoCopyDest
-    applicationsDir = prefix installDir </> "Applications"
 
+bundleScriptLibraryHaskell :: LocalBuildInfo -> MacApp -> String
+bundleScriptLibraryHaskell localb app = unlines
+  [ "#!/bin/bash"
+  , "$HOME/Library/Haskell/Applications"
+           </> takeFileName appPathSrc
+           </> "Contents/MacOS" </> appName app ++ " \"$@\""
+  ]
+  where
+    appInfo    = toAppBuildInfo localb app
+    appPathSrc = abAppPath appInfo
+ 
+bundleScriptElsewhere :: LocalBuildInfo -> MacApp -> String
+bundleScriptElsewhere localb app = unlines
+  [ "#!/bin/bash"
+  , "COUNTER=0"
+  , "MAX_DEPTH=256"
+  , "ZERO=$0"
+  , "NZERO=`readlink $ZERO`; STATUS=$?"
+  , ""
+  , "# The counter is just a safeguard in case I'd done something silly"
+  , "while [ $STATUS -eq 0 -a $COUNTER -lt $MAX_DEPTH ]; do"
+  , "  let COUNTER=COUNTER+1"
+  , "  ZERO=$NZERO"
+  , "  NZERO=`readlink $ZERO`; STATUS=$?"
+  , "done"
+  , "if [ $COUNTER -ge $MAX_DEPTH ]; then"
+  , "  echo >&2 Urk! exceeded symlink depth of $MAX_DEPTH trying to dereference $0"
+  , "  exit 1"
+  , "fi"
+  , "`dirname $ZERO`" </> "../Applications"
+           </> takeFileName appPathSrc
+           </> "Contents/MacOS" </> appName app ++ " \"$@\""
+  ]
+  where
+    appInfo    = toAppBuildInfo localb app
+    appPathSrc = abAppPath appInfo
+ 
 isMacOS :: Bool
 isMacOS = os == "darwin"
 
