@@ -25,7 +25,7 @@ module Distribution.MacOSX (
 
 import Control.Exception
 import Prelude hiding ( catch )
-import Control.Monad (forM_, when)
+import Control.Monad (forM_, when, filterM)
 import Data.String.Utils (replace)
 import Distribution.PackageDescription (PackageDescription(..),
                                         Executable(..))
@@ -40,7 +40,7 @@ import Distribution.Verbosity (normal)
 import System.Cmd (system)
 import System.FilePath
 import System.Info (os)
-import System.Directory (copyFile, createDirectoryIfMissing)
+import System.Directory (copyFile, createDirectoryIfMissing, doesDirectoryExist)
 import System.Exit
 
 import Distribution.MacOSX.AppBuildInfo
@@ -198,7 +198,10 @@ osxIncantations ::
   FilePath -- ^ Path to application bundle root.
   -> MacApp -> IO ()
 osxIncantations appPath app =
-  do putStrLn "Running Rez, etc."
+  do dtools <- developerTools
+     let rez     = dtools </> "Rez"
+         setFile = dtools </> "SetFile"
+     putStrLn "Running Rez, etc."
      ExitSuccess <- system $ rez ++ " Carbon.r -o " ++
        appPath </> pathInApp app (appName app)
      writeFile (appPath </> "PkgInfo") "APPL????"
@@ -206,13 +209,19 @@ osxIncantations appPath app =
      ExitSuccess <- system $ setFile ++ " -a C " ++ appPath </> "Contents"
      return ()
 
--- | Path to @Rez@ tool.
-rez :: FilePath
-rez = "/Developer/Tools/Rez"
-
--- | Path to @SetFile@ tool.
-setFile :: FilePath
-setFile = "/Developer/Tools/SetFile"
+-- | Path to the developer tools directory, if one exists
+developerTools :: IO FilePath
+developerTools =
+   do ds <- filterM doesDirectoryExist cands
+      case ds of
+        [] -> do putStrLn $ "Can't find the developer tools directory. Have you installed the Developer tools?\n"
+                            ++ "I tried looking for:\n" ++ unlines (map ("* " ++) cands)
+                 exitWith (ExitFailure 1)
+        (d:_) -> return d
+  where
+    cands = [ "/Applications/XCode.app/Contents/Developer/Tools"
+            , "/Developer/Tools"
+            ]
 
 -- | Default plist template, based on that in macosx-app from wx (but
 -- with version stuff removed).
