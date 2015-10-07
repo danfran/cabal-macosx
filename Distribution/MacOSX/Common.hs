@@ -1,3 +1,4 @@
+-- | Utility functions
 module Distribution.MacOSX.Common where
 
 import Data.List

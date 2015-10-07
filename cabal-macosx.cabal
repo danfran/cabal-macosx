@@ -1,5 +1,5 @@
 Name:                   cabal-macosx
-Version:                0.2.2
+Version:                0.2.3
 Stability:              Alpha
 Synopsis:               Cabal support for creating Mac OSX application bundles.
 Description:
@@ -21,7 +21,7 @@ License:                BSD3
 License-file:           LICENSE
 Copyright:              Eric Kow & Andy Gimblett
 Author:                 Eric Kow <eric.kow@gmail.com> & Andy Gimblett <haskell@gimbo.org.uk>
-Maintainer:             Andy Gimblett <haskell@gimbo.org.uk>
+Maintainer:             Eric Kow <eric.kow@gmail.com>
 Homepage:               http://github.com/gimbo/cabal-macosx
 Build-Type:             Simple
 Cabal-Version:          >=1.6
@@ -33,7 +33,7 @@ Source-Repository head
 Library
   Build-Depends:   base >= 4 && < 5, Cabal >= 1.6, directory
                ,   fgl >= 5.4.2.2 && < 5.5
-               ,   filepath, MissingH, parsec, process
+               ,   filepath, parsec, process, text
   Exposed-modules: Distribution.MacOSX
   Other-modules:   Distribution.MacOSX.Common,
                    Distribution.MacOSX.AppBuildInfo,
@@ -45,4 +45,4 @@ Executable macosx-app
   Main-is:         macosx-app.hs
   Build-Depends:   base >= 4 && < 5, Cabal >= 1.6, directory
                ,   fgl >= 5.4.2.2 && < 5.5
-               ,   filepath, MissingH, parsec, process
+               ,   filepath, parsec, process, text

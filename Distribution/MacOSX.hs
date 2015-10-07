@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 {- | Cabal support for creating Mac OSX application bundles.
 
 GUI applications on Mac OSX should be run as application /bundles/;
@@ -27,10 +28,18 @@ import Control.Exception
 import Prelude hiding ( catch )
 import Control.Monad (forM_, when, filterM)
 import Data.List ( isPrefixOf )
-import Data.String.Utils (replace)
-import Distribution.PackageDescription (BuildInfo(..),
-                                        Executable(..),
-                                        PackageDescription(..))
+import Data.Text ( Text )
+import System.Cmd (system)
+import System.Exit
+import System.FilePath
+import System.Info (os)
+import System.Directory (copyFile, createDirectoryIfMissing, doesDirectoryExist,
+                         getHomeDirectory)
+import qualified Data.Text as T
+import qualified Data.Text.IO as T
+
+import Distribution.PackageDescription (PackageDescription(..),
+                                        Executable(..))
 import Distribution.Simple
 import Distribution.Simple.InstallDirs (bindir, prefix, CopyDest(NoCopyDest))
 import Distribution.Simple.LocalBuildInfo (absoluteInstallDirs, LocalBuildInfo(..))
@@ -39,12 +48,6 @@ import Distribution.Simple.Setup (BuildFlags, InstallFlags,
                                  )
 import Distribution.Simple.Utils (installDirectoryContents, installExecutableFile)
 import Distribution.Verbosity (normal)
-import System.Cmd (system)
-import System.FilePath
-import System.Info (os)
-import System.Directory (copyFile, createDirectoryIfMissing, doesDirectoryExist,
-                         getHomeDirectory)
-import System.Exit
 
 import Distribution.MacOSX.AppBuildInfo
 import Distribution.MacOSX.Common
@@ -56,30 +59,17 @@ appBundleBuildHook ::
   [MacApp] -- ^ List of applications to build; if empty, an
            -- application is built for each executable in the package,
            -- with no icon or plist, and no dependency-chasing.
-           -- In any case, apps are only built for executables whose
-           -- buildable flag is True (which they are by default in
-           -- Cabal).
   -> Args -- ^ All other parameters as per
           -- 'Distribution.Simple.postBuild'.
   -> BuildFlags -> PackageDescription -> LocalBuildInfo -> IO ()
 appBundleBuildHook apps _ _ pkg localb =
   if isMacOS
-     then case apps' of
-            [] -> putStrLn "No buildable MacApps, so making no bundles."
-            _  -> forM_ apps' $ makeAppBundle . toAppBuildInfo localb
+     then forM_ apps' $ makeAppBundle . toAppBuildInfo localb
      else putStrLn "Not OS X, so not building an application bundle."
-  where
-    apps' = case apps of
-              [] -> map mkDefault buildables
-              xs -> filter buildableApp xs
-    -- List of buildable executables from .cabal file.
-    buildables :: [Executable]
-    buildables = filter (buildable . buildInfo) $ executables pkg
-    -- Check if a MacApp is in that list of buildable executables.
-    buildableApp :: MacApp -> Bool
-    buildableApp app = any (\e -> exeName e == appName app) buildables
-    -- Make a default MacApp in absence of explicit from Setup.hs
-    mkDefault x = MacApp (exeName x) Nothing Nothing [] [] DoNotChase
+  where apps' = case apps of
+                      [] -> map mkDefault $ executables pkg
+                      xs -> xs
+        mkDefault x = MacApp (exeName x) Nothing Nothing [] [] DoNotChase
 
 -- | Post-install hook for OS X application bundles.  Copies the
 -- application bundle (assuming you are also using the appBundleBuildHook)
@@ -133,16 +123,24 @@ bundleScriptLibraryHaskell localb app = unlines
 bundleScriptElsewhere :: LocalBuildInfo -> MacApp -> String
 bundleScriptElsewhere localb app = unlines
   [ "#!/bin/bash"
-  , "COUNTER=0"
   , "MAX_DEPTH=256"
+  , "COUNTER=0"
   , "ZERO=$0"
-  , "NZERO=`readlink $ZERO`; STATUS=$?"
+  , "STATUS=0"
   , ""
   , "# The counter is just a safeguard in case I'd done something silly"
   , "while [ $STATUS -eq 0 -a $COUNTER -lt $MAX_DEPTH ]; do"
-  , "  let COUNTER=COUNTER+1"
-  , "  ZERO=$NZERO"
+  , "  COUNTER=$(($COUNTER+1))"
   , "  NZERO=`readlink $ZERO`; STATUS=$?"
+  , "  if [ $STATUS -eq 0 ]; then"
+  , "      # go to my parent dir"
+  , "      pushd $(dirname $ZERO)  > /dev/null"
+  , "      # now follow the symlink if at all"
+  , "      pushd $(dirname $NZERO) > /dev/null"
+  , "      ZERO=$PWD/$(basename $NZERO)"
+  , "      popd > /dev/null"
+  , "      popd > /dev/null"
+  , "  fi"
   , "done"
   , "if [ $COUNTER -ge $MAX_DEPTH ]; then"
   , "  echo >&2 Urk! exceeded symlink depth of $MAX_DEPTH trying to dereference $0"
@@ -213,9 +211,9 @@ maybeCopyPlist appPath app =
     Nothing -> case appIcon app of
                  Just icPath ->
                    do -- Need a plist to support icon; use default.
-                     let pl = replace "$program" (appName app) plistTemplate
-                         pl' = replace "$iconPath" (takeFileName icPath) pl
-                     writeFile plDest pl'
+                     let pl  = T.replace "$program"  (T.pack (appName app)) plistTemplate
+                         pl' = T.replace "$iconPath" (T.pack (takeFileName icPath)) pl
+                     T.writeFile plDest pl'
                      return ()
                  Nothing -> return () -- No icon, no plist, nothing to do.
     where plDest = appPath </> "Contents/Info.plist"
@@ -265,7 +263,7 @@ developerTools =
 
 -- | Default plist template, based on that in macosx-app from wx (but
 -- with version stuff removed).
-plistTemplate :: String
+plistTemplate :: Text
 plistTemplate = "\
     \<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n\
     \<!DOCTYPE plist SYSTEM \"file://localhost/System/Library/DTDs/PropertyList.dtd\">\n\
