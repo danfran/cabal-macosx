@@ -1,3 +1,4 @@
 .hsenv
 .idea/
 **/*.iml
+dist/
