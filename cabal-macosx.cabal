@@ -1,5 +1,5 @@
 Name:                   cabal-macosx
-Version:                0.2.3.1
+Version:                0.2.3.2
 Stability:              Alpha
 Synopsis:               Cabal support for creating Mac OSX application bundles.
 Description:
@@ -24,25 +24,48 @@ Author:                 Eric Kow <eric.kow@gmail.com> & Andy Gimblett <haskell@g
 Maintainer:             Daniele Francesconi <dfrancesconi12@gmail.com>
 Homepage:               http://github.com/danfran/cabal-macosx
 Build-Type:             Simple
-Cabal-Version:          >=1.6
+Cabal-Version:          >=1.8
 
 Source-Repository head
     Type:         git
     Location:     http://github.com/danfran/cabal-macosx
 
 Library
-  Build-Depends:   base >= 4 && < 5, Cabal >= 1.6, directory
-               ,   fgl >= 5.4.2.2 && < 5.6
-               ,   filepath, parsec, process, text
-  Exposed-modules: Distribution.MacOSX
-  Other-modules:   Distribution.MacOSX.Common,
-                   Distribution.MacOSX.AppBuildInfo,
-                   Distribution.MacOSX.Dependencies,
-                   Distribution.MacOSX.DG
-  ghc-options:     -fwarn-tabs -Wall
+  Build-Depends:    base >= 4 && < 5
+                    , Cabal >= 1.6, directory
+                    , fgl >= 5.4.2.2 && < 5.6
+                    , filepath
+                    , parsec
+                    , process
+                    , text
+  Exposed-modules:  Distribution.MacOSX,
+                    Distribution.MacOSX.Internal,
+                    Distribution.MacOSX.Common
+  Other-modules:    Distribution.MacOSX.AppBuildInfo,
+                    Distribution.MacOSX.Dependencies,
+                    Distribution.MacOSX.DG
+  ghc-options:      -fwarn-tabs -Wall
 
 Executable macosx-app
-  Main-is:         macosx-app.hs
-  Build-Depends:   base >= 4 && < 5, Cabal >= 1.6, directory
-               ,   fgl >= 5.4.2.2 && < 5.6
-               ,   filepath, parsec, process, text
+  Main-is:          macosx-app.hs
+  Build-Depends:    base >= 4 && < 5
+                    , Cabal >= 1.6
+                    , directory
+                    , fgl >= 5.4.2.2 && < 5.6
+                    , filepath
+                    , parsec
+                    , process
+                    , text
+
+test-suite tests
+  ghc-options:      -Wall
+  hs-source-dirs:   tests
+  Main-is:          Main.hs
+  Type:             exitcode-stdio-1.0
+  Other-modules:    Distribution.MacOSX.Internal.Tests
+  Build-depends:    base >= 4 && < 4.9
+                    , HUnit >= 1.2 && < 1.4
+                    , cabal-macosx
+                    , test-framework == 0.8.*
+                    , test-framework-hunit == 0.3.*
+                    , temporary

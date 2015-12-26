@@ -1,22 +1,23 @@
 {-# LANGUAGE OverloadedStrings #-}
-{- | Cabal support for creating Mac OSX application bundles.
+  {- | Cabal support for creating Mac OSX application bundles.
 
-GUI applications on Mac OSX should be run as application /bundles/;
-these wrap an executable in a particular directory structure which can
-also carry resources such as icons, program metadata, images, other
-binaries, and copies of shared libraries.
+  GUI applications on Mac OSX should be run as application /bundles/;
+  these wrap an executable in a particular directory structure which can
+  also carry resources such as icons, program metadata, images, other
+  binaries, and copies of shared libraries.
 
-This module provides a Cabal post-build hook for creating such
-application bundles, and controlling their contents.
+  This module provides a Cabal post-build hook for creating such
+  application bundles, and controlling their contents.
 
-For more information about OSX application bundles, look for the
-/Bundle Programming Guide/ on the /Apple Developer Connection/
-website, <http://developer.apple.com/>.
+  For more information about OSX application bundles, look for the
+  /Bundle Programming Guide/ on the /Apple Developer Connection/
+  website, <http://developer.apple.com/>.
 
--}
+  -}
 
 module Distribution.MacOSX (
-  appBundleBuildHook, appBundleInstallHook,
+  appBundleBuildHook,
+  appBundleInstallHook,
   makeAppBundle,
   MacApp(..),
   ChaseDeps(..),
@@ -26,15 +27,14 @@ module Distribution.MacOSX (
 
 import Control.Exception
 import Prelude hiding ( catch )
-import Control.Monad (forM_, when, filterM)
+import Control.Monad (forM_, when)
 import Data.List ( isPrefixOf )
 import Data.Text ( Text )
 import System.Cmd (system)
 import System.Exit
 import System.FilePath
 import System.Info (os)
-import System.Directory (copyFile, createDirectoryIfMissing, doesDirectoryExist,
-                         getHomeDirectory)
+import System.Directory (copyFile, createDirectoryIfMissing, getHomeDirectory)
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
 
@@ -49,6 +49,7 @@ import Distribution.Simple.Setup (BuildFlags, InstallFlags,
 import Distribution.Simple.Utils (installDirectoryContents, installExecutableFile)
 import Distribution.Verbosity (normal)
 
+import Distribution.MacOSX.Internal
 import Distribution.MacOSX.AppBuildInfo
 import Distribution.MacOSX.Common
 import Distribution.MacOSX.Dependencies
@@ -229,37 +230,6 @@ maybeCopyIcon appPath app =
          copyFile icPath $
                   appPath </> "Contents/Resources" </> takeFileName icPath
     Nothing -> return ()
-
--- | Perform various magical OS X incantations for turning the app
--- directory into a bundle proper.
-osxIncantations ::
-  FilePath -- ^ Path to application bundle root.
-  -> MacApp -> IO ()
-osxIncantations appPath app =
-  do dtools <- developerTools
-     let rez     = dtools </> "Rez"
-         setFile = dtools </> "SetFile"
-     putStrLn "Running Rez, etc."
-     ExitSuccess <- system $ rez ++ " Carbon.r -o " ++
-       appPath </> pathInApp app (appName app)
-     writeFile (appPath </> "PkgInfo") "APPL????"
-     -- Tell Finder about the icon.
-     ExitSuccess <- system $ setFile ++ " -a C " ++ appPath </> "Contents"
-     return ()
-
--- | Path to the developer tools directory, if one exists
-developerTools :: IO FilePath
-developerTools =
-   do ds <- filterM doesDirectoryExist cands
-      case ds of
-        [] -> do putStrLn $ "Can't find the developer tools directory. Have you installed the Developer tools?\n"
-                            ++ "I tried looking for:\n" ++ unlines (map ("* " ++) cands)
-                 exitWith (ExitFailure 1)
-        (d:_) -> return d
-  where
-    cands = [ "/Applications/XCode.app/Contents/Developer/Tools"
-            , "/Developer/Tools"
-            ]
 
 -- | Default plist template, based on that in macosx-app from wx (but
 -- with version stuff removed).
