@@ -19,7 +19,6 @@ module Distribution.MacOSX.Internal (
   osxIncantations
 ) where
 
-import Control.Exception
 import Prelude hiding ( catch )
 import System.Cmd ( system )
 import System.Exit
