@@ -1,4 +1,6 @@
-# cabal-macosx: Cabal hooks for Mac OSX
+# cabal-macosx
+
+## Cabal hooks for Mac OSX
 
 This package provides a Cabal post-build hook for building application
 bundles for GUIs on Mac OSX.  It also includes a standalone command
@@ -24,31 +26,35 @@ and produces an application bundle in the current working directory.
 
 In order to run successfully the process, please be sure that Xcode is installed properly on your machine.
 
-Also, run from command line:
-
-```
-xcode-select --install
-```
-
-*Note*
-
-`cabal-macosx` runs the Carbon tool `Rez` in this way:
+Also, note that `cabal-macosx` runs the Carbon tool `Rez` in this way:
 
 ```
 /path/to/tools/Rez Carbon.r -o dist/build/SomeProject.app/Contents/MacOS/SomeProject
 ```
 
-running the command:
+So after the Xcode's installation, please run from command line:
 
 ```
 xcode-select --install
 ```
 
-prevent the necessity to specifiy manually the include paths like:
+to prevent the necessity of specifying the include paths like this:
 
+```
 /path/to/tools/Rez -F /developer/path/SDKs/MacOSX10.11.sdk/System/Library/Frameworks/ Carbon.r -o dist/build/SomeProject.app/Contents/MacOS/SomeProject
+```
 
-which is not managed by `cabal-macosx`.
+for the Carbon tools. `cabal-macosx` assumes that the paths are properly configured otherwise it will stop the building process and returning an error similar to:
+
+```
+failed to find Carbon/Carbon.r
+### /Applications/XCode.app/Contents/Developer/Tools/Rez - SysError 0 during open of "Carbon.r".
+Fatal Error!
+### /Applications/XCode.app/Contents/Developer/Tools/Rez - Fatal Error, can't recover.
+Carbon.r: ### /Applications/XCode.app/Contents/Developer/Tools/Rez - Since errors occurred, dist/build/NetMonitor.app/Contents/MacOS/NetMonitor's resource fork was not written.
+```
+
+(and eventually deleting the built local binary too).
 
 ## About the project
 
@@ -57,14 +63,15 @@ and
 http://www.mail-archive.com/wxhaskell-users@lists.sourceforge.net/msg00701.html
 
 The package is extensively documented, including internally.  If
-you're interested in modifying it, you may want to runghc Setup
-haddock --hyperlink-source --internal to produce full internal
-documentation.
+you're interested in modifying it, you may want to
+
+```
+runghc Setup haddock --hyperlink-source --internal
+```
+to produce full internal documentation.
 
 ----
 
-Andy Gimblett
-2010.02.16
+Andy Gimblett - 2010.02.16
 
-Daniele Francesconi
-2015.12.29
+Daniele Francesconi - 2015.12.29
