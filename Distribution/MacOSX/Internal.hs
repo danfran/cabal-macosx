@@ -53,8 +53,9 @@ runCommand commandExec =
      exitValue <- system commandExec
      case exitValue of
         ExitSuccess -> return ()
-        _ -> putStrLn $ "Warning - Could not run the command \""
-                        ++ commandExec ++ "\". Please check your local `XCode` configuration."
+        _ -> do putStrLn $ "Warning - Could not run the command \""
+                           ++ commandExec ++ "\". Please check your local `XCode` configuration."
+                exitFailure
 
 -- | Path to the developer tools directory, if one exists
 developerTools :: IO FilePath

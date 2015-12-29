@@ -1,12 +1,13 @@
 module Distribution.MacOSX.Internal.Tests where
 
-import Test.HUnit (Assertion, assertEqual)
+import System.IO.Temp (withSystemTempDirectory)
+import Control.Exception (SomeException, catch)
+import Prelude hiding (catch)
+import Test.HUnit (Assertion)
 import Test.Framework (Test, mutuallyExclusive, testGroup)
 import Test.Framework.Providers.HUnit (testCase)
 import Distribution.MacOSX.Internal (osxIncantations)
 import Distribution.MacOSX.Common
-import System.IO.Temp (withSystemTempDirectory)
-import Control.Exception
 
 macosxInternalTests :: Test
 macosxInternalTests = testGroup "Distribution.MacOSX.Internal"
@@ -16,7 +17,7 @@ macosxInternalTests = testGroup "Distribution.MacOSX.Internal"
     ]
 
 testOsxIncantations :: Test
-testOsxIncantations = testCase "should not throw any exception even if Xcode's Carbon Tools fail to run" testCarbonTools
+testOsxIncantations = testCase "should exit with an exit-failure as Xcode's Carbon Tools fail to run" testCarbonTools
   where
     testCarbonTools :: Assertion
     testCarbonTools = do
@@ -24,5 +25,6 @@ testOsxIncantations = testCase "should not throw any exception even if Xcode's C
 
         withSystemTempDirectory "DummyAppPath" $ \tmpDir
             -> osxIncantations tmpDir macApp
-
-        return ()
+                 `catch`
+                     (\e -> do putStrLn $ "Catched: " ++ show (e :: SomeException)
+                               return ())
