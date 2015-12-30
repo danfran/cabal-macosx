@@ -23,8 +23,13 @@ data AppBuildInfo = AppBuildInfo
 -- | @toAppBuildInfo l m@ returns information for an application bundle
 --   within the @l@ build directory
 toAppBuildInfo :: LocalBuildInfo -> MacApp -> AppBuildInfo
-toAppBuildInfo localb app = AppBuildInfo
-  { abAppPath    = buildDir localb </> appName app <.> "app"
-  , abAppOrigExe = buildDir localb </> appName app </> appName app
+toAppBuildInfo localb app = createAppBuildInfo (buildDir localb) app
+
+-- | @createAppBuildInfo d m@ returns information for an application bundle
+--   within the @d@ build directory from LocalBuildInfo
+createAppBuildInfo :: FilePath -> MacApp -> AppBuildInfo
+createAppBuildInfo buildDirLocalBuildInfo app = AppBuildInfo
+  { abAppPath    = buildDirLocalBuildInfo </> appName app <.> "app"
+  , abAppOrigExe = buildDirLocalBuildInfo </> appName app </> appName app
   , abApp        = app
   }

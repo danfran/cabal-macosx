@@ -26,12 +26,10 @@ module Distribution.MacOSX (
 ) where
 
 import Control.Exception
-import Prelude hiding ( catch, lookup )
+import Prelude hiding ( catch )
 import Control.Monad (forM_, when)
 import Data.List ( isPrefixOf )
 import Data.Text ( Text )
-import Data.Foldable ( foldl )
-import Data.Map ( empty, insert, lookup )
 import System.Cmd (system)
 import System.Exit
 import System.FilePath
@@ -40,14 +38,11 @@ import System.Directory (doesDirectoryExist, copyFile, createDirectoryIfMissing,
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
 
-import Distribution.PackageDescription (PackageDescription(..), BuildInfo(..),
-                                        Executable(..), withExe)
+import Distribution.PackageDescription (PackageDescription(..), Executable(..))
 import Distribution.Simple
 import Distribution.Simple.InstallDirs (bindir, prefix, CopyDest(NoCopyDest))
 import Distribution.Simple.LocalBuildInfo (absoluteInstallDirs, LocalBuildInfo(..))
-import Distribution.Simple.Setup (BuildFlags, InstallFlags,
-                                  fromFlagOrDefault, installVerbosity
-                                 )
+import Distribution.Simple.Setup (BuildFlags, InstallFlags, fromFlagOrDefault, installVerbosity)
 import Distribution.Simple.Utils (installDirectoryContents, installExecutableFile)
 import Distribution.Verbosity (normal)
 
@@ -67,24 +62,10 @@ appBundleBuildHook ::
   -> BuildFlags -> PackageDescription -> LocalBuildInfo -> IO ()
 appBundleBuildHook apps _ _ pkg localb =
   if isMacOS
-     then withExe pkg (\executable -> createMacAppForBuildableApplication $ lookup (exeName executable) toMapMacApps)
+     then do let buildDirLbi = buildDir localb
+             let macApps = getMacAppsForBuildableExecutors apps (executables pkg)
+             forM_ macApps (makeAppBundle . createAppBuildInfo buildDirLbi)
      else putStrLn "Not OS X, so not building an application bundle."
-
-  where toMapMacApps = foldl (\a v -> insert (appName v) v a) empty apps'
-
-        apps' = case apps of
-                      [] -> map mkDefault $ executables pkg
-                      xs -> xs
-        mkDefault x = MacApp (exeName x) Nothing Nothing [] [] DoNotChase
-
-        createMacAppForBuildableApplication :: Maybe MacApp -> IO ()
-        createMacAppForBuildableApplication macApp
-              = case macApp of
-                      Just a -> makeAppBundle $ toAppBuildInfo localb a
-                      Nothing -> return ()
-
--- getBuildableApps :: PackageDescription -> Map [(String, Bool)]
--- getBuildableApps pkg =
 
 -- | Post-install hook for OS X application bundles.  Copies the
 -- application bundle (assuming you are also using the appBundleBuildHook)

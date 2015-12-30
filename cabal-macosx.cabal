@@ -71,3 +71,4 @@ test-suite tests
                     , test-framework == 0.8.*
                     , test-framework-hunit == 0.3.*
                     , temporary
+                    , Cabal >= 1.6

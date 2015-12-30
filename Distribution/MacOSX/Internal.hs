@@ -16,17 +16,29 @@ website, <http://developer.apple.com/>.
 -}
 
 module Distribution.MacOSX.Internal (
+  getMacAppsForBuildableExecutors,
   osxIncantations
 ) where
 
-import Prelude hiding ( catch )
+import Prelude hiding ( catch, lookup )
 import System.Cmd ( system )
 import System.Exit
 import System.FilePath
 import Control.Monad (filterM)
 import System.Directory (doesDirectoryExist)
+import Data.Foldable ( foldl )
+import Data.Map ( empty, insert, lookup )
+import Distribution.PackageDescription (BuildInfo(..), Executable(..))
 
 import Distribution.MacOSX.Common
+
+getMacAppsForBuildableExecutors :: [MacApp] -> [Executable] -> [MacApp]
+getMacAppsForBuildableExecutors macApps executables =
+  case macApps of
+    [] -> map mkDefault $ executables
+    xs -> [ x | x <- xs, (appName x) `elem` buildableExecutableNames ]
+  where mkDefault x = MacApp (exeName x) Nothing Nothing [] [] DoNotChase
+        buildableExecutableNames = [ exeName exe | exe <- executables, buildable (buildInfo exe) ]
 
 -- | Perform various magical OS X incantations for turning the app
 -- directory into a bundle proper.
