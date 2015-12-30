@@ -35,10 +35,18 @@ import Distribution.MacOSX.Common
 getMacAppsForBuildableExecutors :: [MacApp] -> [Executable] -> [MacApp]
 getMacAppsForBuildableExecutors macApps executables =
   case macApps of
-    [] -> map mkDefault $ executables
-    xs -> [ x | x <- xs, (appName x) `elem` buildableExecutableNames ]
-  where mkDefault x = MacApp (exeName x) Nothing Nothing [] [] DoNotChase
-        buildableExecutableNames = [ exeName exe | exe <- executables, buildable (buildInfo exe) ]
+    [] -> map mkDefault buildables
+    xs -> filter buildableApp xs
+  where -- Make a default MacApp in absence of explicit from Setup.hs
+        mkDefault x = MacApp (exeName x) Nothing Nothing [] [] DoNotChase
+
+        -- Check if a MacApp is in that list of buildable executables.
+        buildableApp :: MacApp -> Bool
+        buildableApp app = any (\e -> exeName e == appName app) buildables
+
+        -- List of buildable executables from .cabal file.
+        buildables :: [Executable]
+        buildables = filter (buildable . buildInfo) executables
 
 -- | Perform various magical OS X incantations for turning the app
 -- directory into a bundle proper.
