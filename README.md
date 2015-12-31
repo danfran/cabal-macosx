@@ -20,7 +20,9 @@ The command line version only provides basic functionality at the
 moment.  It takes a single argument, the path to an executable,
 and produces an application bundle in the current working directory.
 
-## Requirements
+## Troubleshooting
+
+### ~ Rez is exiting with error
 
 `cabal-macosx` uses Xcode's Carbon Tools to prepare an app bundle.
 
@@ -56,6 +58,55 @@ Carbon.r: ### /Applications/XCode.app/Contents/Developer/Tools/Rez - Since error
 
 (and eventually deleting the built local binary too).
 
+### ~ Install fails inside a sandbox
+
+If you get an error similar to this:
+
+```
+exited with an error:
+
+dist/dist-sandbox-8121acba/setup/setup.hs:11:19:
+Couldn't match type ‘LocalBuildInfo’
+with ‘Cabal-1.22.5.0:Distribution.Simple.LocalBuildInfo.LocalBuildInfo’
+NB: ‘LocalBuildInfo’
+is defined in ‘Distribution.Simple.LocalBuildInfo’
+in package ‘Cabal-1.22.6.0’
+‘Cabal-1.22.5.0:Distribution.Simple.LocalBuildInfo.LocalBuildInfo’
+is defined in ‘Distribution.Simple.LocalBuildInfo’
+in package ‘Cabal-1.22.5.0’
+Expected type: Args
+-> Distribution.Simple.Setup.BuildFlags
+-> Distribution.PackageDescription.PackageDescription
+-> LocalBuildInfo
+-> IO ()
+Actual type: [String]
+-> Cabal-1.22.5.0:Distribution.Simple.Setup.BuildFlags
+-> Cabal-1.22.5.0:Distribution.PackageDescription.PackageDescription
+-> Cabal-1.22.5.0:Distribution.Simple.LocalBuildInfo.LocalBuildInfo
+-> IO ()
+In the ‘postBuild’ field of a record
+In the second argument of ‘($)’, namely
+‘simpleUserHooks {postBuild = myPostBuild}’
+)
+```
+
+You might need to update your version of Cabal with something like this:
+
+```
+~$ cabal --version
+cabal-install version 1.22.6.0
+using version 1.22.4.0 of the Cabal library
+~$ cabal update
+...
+~$ cabal install cabal cabal-install
+...
+~$ cabal --version
+cabal-install version 1.22.7.0
+using version 1.22.6.0 of the Cabal library
+```
+
+More: https://www.haskell.org/cabal/download.html
+
 ## About the project
 
 This code was branched from http://code.haskell.org/GenI/Setup.hs
@@ -72,6 +123,6 @@ to produce full internal documentation.
 
 ----
 
-Andy Gimblett - 2010.02.16
-
 Daniele Francesconi - 2015.12.29
+
+Andy Gimblett - 2010.02.16
