@@ -6,7 +6,7 @@ these wrap an executable in a particular directory structure which can
 also carry resources such as icons, program metadata, images, other
 binaries, and copies of shared libraries.
 
-This module provides a Cabal post-build hook for creating such
+This module provides internals to a Cabal post-build hook for creating such
 application bundles, and controlling their contents.
 
 For more information about OSX application bundles, look for the
@@ -20,19 +20,21 @@ module Distribution.MacOSX.Internal (
   osxIncantations
 ) where
 
-import Prelude hiding ( catch, lookup )
+import Prelude hiding ( catch )
 import System.Cmd ( system )
 import System.Exit
 import System.FilePath
 import Control.Monad (filterM)
 import System.Directory (doesDirectoryExist)
-import Data.Foldable ( foldl )
-import Data.Map ( empty, insert, lookup )
 import Distribution.PackageDescription (BuildInfo(..), Executable(..))
 
 import Distribution.MacOSX.Common
 
-getMacAppsForBuildableExecutors :: [MacApp] -> [Executable] -> [MacApp]
+-- | Filter or create new 'MacApp's that are associated by name to buildable 'Executable's.
+getMacAppsForBuildableExecutors ::
+  [MacApp] -- ^ List of 'MacApp's to filter if any.
+  -> [Executable] -- ^ List of 'Executable's from .cabal.
+  -> [MacApp] -- ^ Returned list of 'MacApp's that are associated by name to buildable 'Executable's.
 getMacAppsForBuildableExecutors macApps executables =
   case macApps of
     [] -> map mkDefault buildables
@@ -55,16 +57,9 @@ osxIncantations ::
   -> MacApp -> IO ()
 osxIncantations appPath app =
   do dtools <- developerTools
-
-     let rezExec = dtools </> "Rez Carbon.r -o " ++ appPath </> pathInApp app (appName app)
-     runCommand rezExec
-
+     runCommand $ dtools </> "Rez Carbon.r -o " ++ appPath </> pathInApp app (appName app)
      writeFile (appPath </> "PkgInfo") "APPL????"
-
-     -- Tell Finder about the icon.
-     let setFileExec = dtools </> "SetFile -a C " ++ appPath </> "Contents"
-     runCommand setFileExec
-
+     runCommand $ dtools </> "SetFile -a C " ++ appPath </> "Contents" -- Tell Finder about the icon.
      return ()
 
 runCommand :: String -> IO ()

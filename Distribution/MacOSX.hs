@@ -31,14 +31,13 @@ import Control.Monad (forM_, when)
 import Data.List ( isPrefixOf )
 import Data.Text ( Text )
 import System.Cmd (system)
-import System.Exit
 import System.FilePath
 import System.Info (os)
-import System.Directory (doesDirectoryExist, copyFile, createDirectoryIfMissing, getHomeDirectory)
+import System.Directory (copyFile, createDirectoryIfMissing, getHomeDirectory)
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
 
-import Distribution.PackageDescription (PackageDescription(..), Executable(..))
+import Distribution.PackageDescription (PackageDescription(..))
 import Distribution.Simple
 import Distribution.Simple.InstallDirs (bindir, prefix, CopyDest(NoCopyDest))
 import Distribution.Simple.LocalBuildInfo (absoluteInstallDirs, LocalBuildInfo(..))
