@@ -82,7 +82,7 @@ script:
  - cabal check
 
  # tests that a source-distribution can be generated
- -cabal sdist
+ - cabal sdist
 
  # check that the generated source-distribution can be built & installed
  - SRC_TGZ=$(cabal info . | awk '{print $2;exit}').tar.gz && (cd dist && cabal install --force-reinstalls "$SRC_TGZ")
