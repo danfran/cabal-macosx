@@ -1,5 +1,8 @@
 # cabal-macosx
 
+[![feed](https://budueba.com/hackage/cabal-macosx)](https://hackage.haskell.org/package/cabal-macosx)
+[![Build Status](https://travis-ci.org/danfran/cabal-macosx.svg?branch=master)](https://travis-ci.org/danfran/cabal-macosx)
+
 ## Cabal hooks for Mac OSX
 
 This package provides a Cabal post-build hook for building application
