@@ -18,6 +18,7 @@
 module Distribution.MacOSX (
   appBundleBuildHook,
   appBundleInstallHook,
+  appBundleCopyHook,
   makeAppBundle,
   MacApp(..),
   ChaseDeps(..),
@@ -41,9 +42,9 @@ import Distribution.PackageDescription (PackageDescription(..))
 import Distribution.Simple
 import Distribution.Simple.InstallDirs (bindir, prefix, CopyDest(NoCopyDest))
 import Distribution.Simple.LocalBuildInfo (absoluteInstallDirs, LocalBuildInfo(..))
-import Distribution.Simple.Setup (BuildFlags, InstallFlags, fromFlagOrDefault, installVerbosity)
+import Distribution.Simple.Setup (BuildFlags, InstallFlags, CopyFlags, fromFlagOrDefault, installVerbosity, copyVerbosity)
 import Distribution.Simple.Utils (installDirectoryContents, installExecutableFile)
-import Distribution.Verbosity (normal)
+import Distribution.Verbosity (normal, Verbosity)
 
 import Distribution.MacOSX.Internal
 import Distribution.MacOSX.AppBuildInfo
@@ -77,8 +78,35 @@ appBundleInstallHook ::
   -> Args -- ^ All other parameters as per
           -- 'Distribution.Simple.postInstall'.
   -> InstallFlags -> PackageDescription -> LocalBuildInfo -> IO ()
-appBundleInstallHook apps _ iflags pkg localb = when isMacOS $ do
-  let verbosity = fromFlagOrDefault normal (installVerbosity iflags)
+appBundleInstallHook apps _ iflags =
+	appBundleInstallOrCopyHook apps
+	    (fromFlagOrDefault normal (installVerbosity iflags))
+{-# DEPRECATED appBundleInstallHook "Use appBundleCopyHook instead" #-}
+
+-- | Post-copy hook for OS X application bundles.  Copies the
+-- application bundle (assuming you are also using the appBundleBuildHook)
+-- to @$prefix/Applications@
+-- Does nothing if called on another O/S.
+-- Use this instead of appBundleInstallHook (do not hook
+-- both postInst and postCopy).
+appBundleCopyHook ::
+  [MacApp] -- ^ List of applications to build; if empty, an
+           -- application is built for each executable in the package,
+           -- with no icon or plist, and no dependency-chasing.
+  -> Args -- ^ All other parameters as per
+          -- 'Distribution.Simple.postCopy'.
+  -> CopyFlags -> PackageDescription -> LocalBuildInfo -> IO ()
+appBundleCopyHook apps _ cflags =
+	appBundleInstallOrCopyHook apps
+	    (fromFlagOrDefault normal (copyVerbosity cflags))
+
+appBundleInstallOrCopyHook ::
+  [MacApp] -- ^ List of applications to build; if empty, an
+           -- application is built for each executable in the package,
+           -- with no icon or plist, and no dependency-chasing.
+  -> Verbosity
+  -> PackageDescription -> LocalBuildInfo -> IO ()
+appBundleInstallOrCopyHook apps verbosity pkg localb = when isMacOS $ do
   libraryHaskell  <- flip fmap getHomeDirectory $ (</> "Library/Haskell")
   let standardPrefix = (libraryHaskell ++ "/") `isPrefixOf` prefix installDir
   let applicationsDir = if standardPrefix
