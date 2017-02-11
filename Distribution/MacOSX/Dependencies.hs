@@ -219,9 +219,11 @@ updateDependency appPath app src tgt =
      setPermissions newLib perm { writable = True }
      let cmd = iTool ++ " -change " ++ show tgt ++ " " ++ show tgt' ++
                    " " ++ show newLib
-     --putStrLn cmd
-     ExitSuccess <- system cmd
+     exitCode <- system cmd
      setPermissions newLib perm
+     when (exitCode /= ExitSuccess) $
+       error $ "Failed to update library dependencies on " ++ show newLib ++
+        " with command: " ++ cmd
      return ()
   where tgt' = "@executable_path/../Frameworks/" </> makeRelative "/" tgt
         newLib = appPath </> pathInApp app src
