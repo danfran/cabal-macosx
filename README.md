@@ -25,42 +25,6 @@ and produces an application bundle in the current working directory.
 
 ## Troubleshooting
 
-### ~ Rez is exiting with error
-
-`cabal-macosx` uses Xcode's Carbon Tools to prepare an app bundle.
-
-In order to run successfully the process, please be sure that Xcode is installed properly on your machine.
-
-Also, note that `cabal-macosx` runs the Carbon tool `Rez` in this way:
-
-```
-/path/to/tools/Rez Carbon.r -o dist/build/SomeProject.app/Contents/MacOS/SomeProject
-```
-
-So after the Xcode's installation, please run from command line:
-
-```
-xcode-select --install
-```
-
-to prevent the necessity of specifying the include paths like this:
-
-```
-/path/to/tools/Rez -F /developer/path/SDKs/MacOSX10.11.sdk/System/Library/Frameworks/ Carbon.r -o dist/build/SomeProject.app/Contents/MacOS/SomeProject
-```
-
-for the Carbon tools. `cabal-macosx` assumes that the paths are properly configured otherwise it will stop the building process and returning an error similar to:
-
-```
-failed to find Carbon/Carbon.r
-### /Applications/XCode.app/Contents/Developer/Tools/Rez - SysError 0 during open of "Carbon.r".
-Fatal Error!
-### /Applications/XCode.app/Contents/Developer/Tools/Rez - Fatal Error, can't recover.
-Carbon.r: ### /Applications/XCode.app/Contents/Developer/Tools/Rez - Since errors occurred, dist/build/NetMonitor.app/Contents/MacOS/NetMonitor's resource fork was not written.
-```
-
-(and eventually deleting the built local binary too).
-
 ### ~ Install fails inside a sandbox
 
 If you get an error similar to this:

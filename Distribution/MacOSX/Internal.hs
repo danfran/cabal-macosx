@@ -56,32 +56,5 @@ osxIncantations ::
   FilePath -- ^ Path to application bundle root.
   -> MacApp -> IO ()
 osxIncantations appPath app =
-  do dtools <- developerTools
-     runCommand $ dtools </> "Rez Carbon.r -o " ++ appPath </> pathInApp app (appName app)
-     writeFile (appPath </> "PkgInfo") "APPL????"
-     runCommand $ dtools </> "SetFile -a C " ++ appPath </> "Contents" -- Tell Finder about the icon.
+  do writeFile (appPath </> "PkgInfo") "APPL????"
      return ()
-
-runCommand :: String -> IO ()
-runCommand commandExec =
-  do putStrLn $ "Running: " ++ commandExec
-     exitValue <- system commandExec
-     case exitValue of
-        ExitSuccess -> return ()
-        _ -> do putStrLn $ "Warning - Could not run the command \""
-                           ++ commandExec ++ "\". Please check your local `XCode` configuration."
-                exitFailure
-
--- | Path to the developer tools directory, if one exists
-developerTools :: IO FilePath
-developerTools =
-   do ds <- filterM doesDirectoryExist cands
-      case ds of
-        [] -> do putStrLn $ "Can't find the developer tools directory. Have you installed the Developer tools?\n"
-                            ++ "I tried looking for:\n" ++ unlines (map ("* " ++) cands)
-                 exitWith (ExitFailure 1)
-        (d:_) -> return d
-  where
-    cands = [ "/Applications/XCode.app/Contents/Developer/Tools"
-            , "/Developer/Tools"
-            ]
