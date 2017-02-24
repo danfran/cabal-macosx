@@ -213,10 +213,17 @@ updateDependency ::
 updateDependency appPath app src tgt =
   do putStrLn $ "Updating " ++ newLib ++ "'s dependency on " ++ tgt ++
                    " to " ++ tgt'
+     -- Ensure we have write permissions while editing the library. Notably,
+     -- Homebrew removes write permissions from installed files.
+     perm <- getPermissions newLib
+     setPermissions newLib perm { writable = True }
      let cmd = iTool ++ " -change " ++ show tgt ++ " " ++ show tgt' ++
                    " " ++ show newLib
-     --putStrLn cmd
-     ExitSuccess <- system cmd
+     exitCode <- system cmd
+     setPermissions newLib perm
+     when (exitCode /= ExitSuccess) $
+       error $ "Failed to update library dependencies on " ++ show newLib ++
+        " with command: " ++ cmd
      return ()
   where tgt' = "@executable_path/../Frameworks/" </> makeRelative "/" tgt
         newLib = appPath </> pathInApp app src
