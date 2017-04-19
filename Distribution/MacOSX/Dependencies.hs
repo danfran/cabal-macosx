@@ -91,8 +91,7 @@ appDependencyGraph appPath app =
     ChaseWithDefaults -> appDependencyGraph appPath app {
                            appDeps = ChaseWith defaultExclusions
                          }
-    ChaseWith xs -> do putStrLn "Building dependency graph*"
-                       putStrLn $ "Roots" ++ show roots
+    ChaseWith xs -> do putStrLn "Building dependency graph"
                        buildDependencyGraph appPath app dgInitial roots [] xs
     DoNotChase -> return dgInitial
   where roots = appName app : otherBins app
@@ -144,8 +143,6 @@ getFDeps ::
   -> IO FDeps
 getFDeps appPath app path exclusions =
   do putStrLn $ "path: " ++ path
-     --testing  <- readProcess oTool ["-l", absPath] ""
-     --putStrLn $ "testing: " ++ testing
      contents <- readProcess oTool ["-L", absPath] ""
      putStrLn $ "contents: " ++ contents
      case parse parseFileDeps "" contents of
