@@ -142,7 +142,9 @@ getFDeps ::
   -> Exclusions -- ^ List of exclusions for dependency chasing.
   -> IO FDeps
 getFDeps appPath app path exclusions =
-  do contents <- readProcess oTool ["-L", absPath] ""
+  do putStrLn $ "path: " ++ path
+     contents <- readProcess oTool ["-L", absPath] ""
+     putStrLn $ "contents: " ++ contents
      case parse parseFileDeps "" contents of
        Left err -> error $ show err
        Right fDeps -> return $ exclude exclusions fDeps
@@ -152,6 +154,7 @@ getFDeps appPath app path exclusions =
         parseFileDeps :: Parser FDeps
         parseFileDeps = do f <- manyTill (noneOf ":") (char ':')
                            _ <- char '\n'
+
                            deps <- parseDepOrName `sepEndBy` char '\n'
                            eof
                            return $ FDeps f $ filter (f /=) $ catMaybes deps
@@ -159,12 +162,22 @@ getFDeps appPath app path exclusions =
         parseDepOrName = do c <- oneOf "\t/"
                             case c of
                               '\t' -> -- A dependency.
-                                      do dep <- parseDep
-                                         return $ Just dep
+                                      do dep <- parseDepOrIgnoreAt
+                                         return $ dep
                               '/' -> -- Same filename, alternative arch
                                      do _ <- manyTill (noneOf ":") (char ':')
                                         return Nothing
                               _ -> error "Can't happen"
+        parseDepOrIgnoreAt :: Parser (Maybe FilePath)
+        parseDepOrIgnoreAt = do c <- lookAhead (oneOf "/@")
+                                case c of
+                                  '/' -> -- A dependency.
+                                         do dep <- parseDep
+                                            return $ Just $ dep
+                                  '@' -> -- ignore entries that start with @
+                                         do _ <- manyTill (noneOf ")") (char ')')
+                                            return Nothing
+                                  _ -> error "Can't happen"
         parseDep :: Parser FilePath
         parseDep = do dep <- manyTill (noneOf " ") (char ' ')
                       _ <- char '('
