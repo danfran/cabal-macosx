@@ -21,16 +21,18 @@ module Distribution.MacOSX.Internal (
   osxIncantations
 ) where
 
+#if MIN_VERSION_Cabal(2,0,0)
+import Data.String (fromString)
+import Distribution.Text (display)
+#endif
 import Prelude hiding ( catch )
 import System.Cmd ( system )
 import System.Exit
 import System.FilePath
 import Control.Monad (filterM)
-import Data.String (fromString)
 import System.Directory (doesDirectoryExist)
-import Distribution.Text (display)
-import Distribution.PackageDescription (BuildInfo(..), Executable(..))
 
+import Distribution.PackageDescription (BuildInfo(..), Executable(..))
 import Distribution.MacOSX.Common
 
 -- | Filter or create new 'MacApp's that are associated by name to buildable 'Executable's.
@@ -51,7 +53,11 @@ getMacAppsForBuildableExecutors macApps executables =
 
         -- Check if a MacApp is in that list of buildable executables.
         buildableApp :: MacApp -> Bool
+#if MIN_VERSION_Cabal(2,0,0)
         buildableApp app = any (\e -> exeName e == fromString (appName app)) buildables
+#else
+        buildableApp app = any (\e -> exeName e == appName app) buildables
+#endif
 
         -- List of buildable executables from .cabal file.
         buildables :: [Executable]
