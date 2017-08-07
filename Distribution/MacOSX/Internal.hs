@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE CPP #-}
 {- | Cabal support for creating Mac OSX application bundles.
 
 GUI applications on Mac OSX should be run as application /bundles/;
@@ -20,14 +21,18 @@ module Distribution.MacOSX.Internal (
   osxIncantations
 ) where
 
+#if MIN_VERSION_Cabal(2,0,0)
+import Data.String (fromString)
+import Distribution.Text (display)
+#endif
 import Prelude hiding ( catch )
 import System.Cmd ( system )
 import System.Exit
 import System.FilePath
 import Control.Monad (filterM)
 import System.Directory (doesDirectoryExist)
-import Distribution.PackageDescription (BuildInfo(..), Executable(..))
 
+import Distribution.PackageDescription (BuildInfo(..), Executable(..))
 import Distribution.MacOSX.Common
 
 -- | Filter or create new 'MacApp's that are associated by name to buildable 'Executable's.
@@ -40,11 +45,19 @@ getMacAppsForBuildableExecutors macApps executables =
     [] -> map mkDefault buildables
     xs -> filter buildableApp xs
   where -- Make a default MacApp in absence of explicit from Setup.hs
+#if MIN_VERSION_Cabal(2,0,0)
+        mkDefault x = MacApp (display $ exeName x) Nothing Nothing [] [] DoNotChase
+#else
         mkDefault x = MacApp (exeName x) Nothing Nothing [] [] DoNotChase
+#endif
 
         -- Check if a MacApp is in that list of buildable executables.
         buildableApp :: MacApp -> Bool
+#if MIN_VERSION_Cabal(2,0,0)
+        buildableApp app = any (\e -> exeName e == fromString (appName app)) buildables
+#else
         buildableApp app = any (\e -> exeName e == appName app) buildables
+#endif
 
         -- List of buildable executables from .cabal file.
         buildables :: [Executable]
