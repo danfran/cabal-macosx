@@ -74,9 +74,9 @@ install:
      mkdir -p $HOME/.ghc $HOME/.cabal/lib $HOME/.cabal/share $HOME/.cabal/bin;
      if [ $GHCVER = "7.0.4" ] || [ $GHCVER = "7.2.2" ];
      then
-          cabal install --only-dependencies --enable-tests --enable-benchmarks -f -containers042
+          cabal install --only-dependencies --enable-tests --enable-benchmarks -f -containers042;
      else
-          cabal install --only-dependencies --enable-tests --enable-benchmarks
+          cabal install --only-dependencies --enable-tests --enable-benchmarks;
      fi
    fi
 
