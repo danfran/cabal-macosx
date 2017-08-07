@@ -16,7 +16,7 @@ macosxInternalTests = testGroup "Distribution.MacOSX.Internal"
           testCase "given nothing then should not try to build any mac-app" testBuildMacApp_noInput,
           testCase "given no executables then should not try to build any mac-app" testBuildMacApp_noExecutables,
           testCase "given only two executables then should try to build two mac-apps" testBuildMacApp_twoBuildableExecutables,
-          testCase "given only two executables and one not executable then should try to build one mac-app" testBuildMacApp_twoExcetuablesOneBuildableandOneNot,
+          testCase "given only two executables and one not executable then should try to build one mac-app" testBuildMacApp_twoExcetuablesOneBuildableAndOneNot,
           testCase "given two executables and one not executable and two apps then should try to build one mac-app" testBuildMacApp_twoAppsAndTwoExecutablesOneBuildableOneNot
         ]
     ]
@@ -43,8 +43,8 @@ testBuildMacApp_twoBuildableExecutables = do
                      , MacApp "Dummy Two" Nothing Nothing [] [] DoNotChase ]
     assertEqual "two mac-apps should be built" expected actual
 
-testBuildMacApp_twoExcetuablesOneBuildableandOneNot :: Assertion
-testBuildMacApp_twoExcetuablesOneBuildableandOneNot = do
+testBuildMacApp_twoExcetuablesOneBuildableAndOneNot :: Assertion
+testBuildMacApp_twoExcetuablesOneBuildableAndOneNot = do
     let execs = [ Executable "Dummy One" "/tmp" (emptyBuildInfo { buildable = False })
                   , Executable "Dummy Two" "/tmp" emptyBuildInfo ]
     let actual = getMacAppsForBuildableExecutors [] execs
