@@ -59,7 +59,7 @@ Executable macosx-app
                     , parsec
                     , process
                     , text
-                    , containers >= 0.4.2
+                    , containers
 
 test-suite tests
   ghc-options:      -Wall
@@ -76,5 +76,5 @@ test-suite tests
                     , filepath
                     , process
                     , text
-                    , containers >= 0.4.2
+                    , containers
                     , directory
