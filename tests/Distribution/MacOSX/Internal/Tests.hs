@@ -40,16 +40,6 @@ testBuildMacApp_noExecutables = do
     let expected = []
     assertEqual "nothing should be built" expected actual
 
-
---data Executable = Executable {
---        exeName    :: UnqualComponentName,
---        modulePath :: FilePath,
---        exeScope   :: ExecutableScope,
---        buildInfo  :: BuildInfo
---    }
-
-
-
 testBuildMacApp_twoBuildableExecutables :: Assertion
 testBuildMacApp_twoBuildableExecutables = do
 #if MIN_VERSION_Cabal(2,0,0)
