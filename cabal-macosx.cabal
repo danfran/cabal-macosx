@@ -24,7 +24,7 @@ Author:                 Eric Kow <eric.kow@gmail.com> & Andy Gimblett <haskell@g
 Maintainer:             Daniele Francesconi <dfrancesconi12@gmail.com>
 Homepage:               http://github.com/danfran/cabal-macosx
 Build-Type:             Simple
-Cabal-Version:          >=1.10
+Cabal-Version:          >=1.8
 Tested-With:            GHC == 7.4.2, GHC == 7.6.3, GHC == 7.8.4, GHC == 7.10.1, GHC == 7.10.2, GHC == 7.10.3, GHC == 8.0.1, GHC == 8.0.2
 
 Source-Repository head
@@ -33,7 +33,7 @@ Source-Repository head
 
 Library
   Build-Depends:    base == 4.*
-                    , Cabal >= 1.10, directory
+                    , Cabal >= 1.6, directory
                     , hscolour
                     , fgl
                     , filepath
@@ -52,7 +52,7 @@ Library
 Executable macosx-app
   Main-is:          macosx-app.hs
   Build-Depends:    base == 4.*
-                    , Cabal >= 1.10
+                    , Cabal >= 1.6
                     , directory
                     , fgl
                     , filepath
@@ -74,7 +74,7 @@ test-suite tests
                     , test-framework
                     , test-framework-hunit
                     , temporary
-                    , Cabal >= 1.10
+                    , Cabal >= 1.6
                     , filepath
                     , process
                     , text
