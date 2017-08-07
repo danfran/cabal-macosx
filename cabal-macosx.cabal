@@ -1,5 +1,5 @@
 Name:                   cabal-macosx
-Version:                0.2.4.0
+Version:                0.2.4.1
 Stability:              Alpha
 Synopsis:               Cabal support for creating Mac OSX application bundles.
 Description:
@@ -32,10 +32,10 @@ Source-Repository head
     Location:     http://github.com/danfran/cabal-macosx
 
 Library
-  Build-Depends:    base >= 4 && < 5
+  Build-Depends:    base == 4.*
                     , Cabal >= 1.6, directory
-                    , hscolour >=1.8
-                    , fgl >= 5.4.2.2 && < 5.6
+                    , hscolour
+                    , fgl
                     , filepath
                     , parsec
                     , process
@@ -51,10 +51,10 @@ Library
 
 Executable macosx-app
   Main-is:          macosx-app.hs
-  Build-Depends:    base >= 4 && < 5
+  Build-Depends:    base == 4.*
                     , Cabal >= 1.6
                     , directory
-                    , fgl >= 5.4.2.2 && < 5.6
+                    , fgl
                     , filepath
                     , parsec
                     , process
@@ -66,11 +66,13 @@ test-suite tests
   hs-source-dirs:   .,tests
   Main-is:          Main.hs
   Type:             exitcode-stdio-1.0
-  Other-modules:    Distribution.MacOSX.Internal.Tests
-  Build-depends:    base >= 4 && < 4.10
-                    , HUnit >= 1.2 && < 1.7.0.0
-                    , test-framework == 0.8.*
-                    , test-framework-hunit == 0.3.*
+  Other-modules:    Distribution.MacOSX.Internal.Tests,
+                    Distribution.MacOSX.Common,
+                    Distribution.MacOSX.Internal
+  Build-depends:    base == 4.*
+                    , HUnit
+                    , test-framework
+                    , test-framework-hunit
                     , temporary
                     , Cabal >= 1.6
                     , filepath
