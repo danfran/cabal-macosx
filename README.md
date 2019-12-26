@@ -1,6 +1,6 @@
 # cabal-macosx
 
-[![feed](https://budueba.com/hackage/cabal-macosx)](https://hackage.haskell.org/package/cabal-macosx)
+[![Hackage CI](https://matrix.hackage.haskell.org/api/v2/packages/cabal-macosx/badge)](https://hackage.haskell.org/package/cabal-macosx)
 [![Build Status](https://travis-ci.org/danfran/cabal-macosx.svg?branch=master)](https://travis-ci.org/danfran/cabal-macosx)
 
 ## Cabal hooks for Mac OSX
@@ -56,6 +56,8 @@ And modify your `Setup.hs` to call the `cabal-macosx` post-build hook:
       ]
 
 See [the Hackage documentation] for details on the build hook API.
+
+For more examples please visit [cabal-macosx-examples](https://github.com/danfran/cabal-macosx-examples).
 
 [cabal-macosx-hackage]: https://hackage.haskell.org/package/cabal-macosx
 

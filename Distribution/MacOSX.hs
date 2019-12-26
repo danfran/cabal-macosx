@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE CPP #-}
   {- | Cabal support for creating Mac OSX application bundles.
 
   GUI applications on Mac OSX should be run as application /bundles/;
@@ -43,7 +44,11 @@ import Distribution.Simple.InstallDirs (bindir, prefix, CopyDest(NoCopyDest))
 import Distribution.Simple.LocalBuildInfo (absoluteInstallDirs, LocalBuildInfo(..))
 import Distribution.Simple.Setup (BuildFlags, InstallFlags, CopyFlags, fromFlagOrDefault, installVerbosity, copyVerbosity)
 import Distribution.Simple.Utils (installDirectoryContents, installExecutableFile)
+#if MIN_VERSION_Cabal(1,18,0)
 import Distribution.System (Platform (..), OS (OSX))
+#else
+import System.Info (os)
+#endif
 import Distribution.Verbosity (normal, Verbosity)
 
 import Distribution.MacOSX.Internal
@@ -61,7 +66,11 @@ appBundleBuildHook ::
           -- 'Distribution.Simple.postBuild'.
   -> BuildFlags -> PackageDescription -> LocalBuildInfo -> IO ()
 appBundleBuildHook apps _ _ pkg localb =
+#if MIN_VERSION_Cabal(1,18,0)
   if isMacOS localb
+#else
+  if isMacOS
+#endif
      then do let buildDirLbi = buildDir localb
              let macApps = getMacAppsForBuildableExecutors apps (executables pkg)
              forM_ macApps (makeAppBundle . createAppBuildInfo buildDirLbi)
@@ -106,7 +115,11 @@ appBundleInstallOrCopyHook ::
            -- with no icon or plist, and no dependency-chasing.
   -> Verbosity
   -> PackageDescription -> LocalBuildInfo -> IO ()
-appBundleInstallOrCopyHook apps verbosity pkg localb = when (isMacOS localb) $ do
+#if MIN_VERSION_Cabal(1,18,0)
+  appBundleInstallOrCopyHook apps verbosity pkg localb = when (isMacOS localb) $ do
+#else
+  appBundleInstallOrCopyHook apps verbosity pkg localb = when isMacOS $ do
+#endif
   libraryHaskell  <- flip fmap getHomeDirectory $ (</> "Library/Haskell")
   let standardPrefix = (libraryHaskell ++ "/") `isPrefixOf` prefix installDir
   let applicationsDir = if standardPrefix
@@ -176,11 +189,17 @@ bundleScriptElsewhere localb app = unlines
   where
     appInfo    = toAppBuildInfo localb app
     appPathSrc = abAppPath appInfo
- 
+
+#if MIN_VERSION_Cabal(1,18,0)
 isMacOS :: LocalBuildInfo -> Bool
 isMacOS localb = case hostPlatform localb of
   Platform _ OSX -> True
   _ -> False
+#else
+isMacOS :: Bool
+isMacOS = os == "darwin"
+#endif
+
 
 -- | Given a 'MacApp' in context, make an application bundle in the
 -- build area. (for internal use only)
