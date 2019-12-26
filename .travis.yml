@@ -58,7 +58,9 @@ matrix:
 
 before_install:
  - unset CC
- - export PATH=$HOME/.local/bin:/opt/ghc/$GHCVER/bin:/opt/cabal/$CABALVER/bin:$PATH
+ - export PATH=/opt/ghc/$GHCVER/bin:/opt/cabal/$CABALVER/bin:$PATH
+ - chmod +x travis/install.sh
+ - chmod +x travis/script.sh
 
 install:
  - travis/install.sh
