@@ -15,8 +15,10 @@ import Distribution.PackageDescription (BuildInfo(..), Executable(..), emptyBuil
 import Distribution.MacOSX.Internal (getMacAppsForBuildableExecutors)
 import Distribution.MacOSX.Common
 
+#if MIN_VERSION_Cabal(2,0,0)
 getExecutableScopeUnknown :: ExecutableScope
 getExecutableScopeUnknown = exeScope $ emptyExecutable
+#endif
 
 macosxInternalTests :: Test
 macosxInternalTests = testGroup "Distribution.MacOSX.Internal"
