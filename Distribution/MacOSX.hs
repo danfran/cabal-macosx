@@ -33,7 +33,6 @@ import Data.List ( isPrefixOf )
 import Data.Text ( Text )
 import System.Cmd (system)
 import System.FilePath
-import System.Info (os)
 import System.Directory (copyFile, createDirectoryIfMissing, getHomeDirectory)
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
@@ -44,6 +43,7 @@ import Distribution.Simple.InstallDirs (bindir, prefix, CopyDest(NoCopyDest))
 import Distribution.Simple.LocalBuildInfo (absoluteInstallDirs, LocalBuildInfo(..))
 import Distribution.Simple.Setup (BuildFlags, InstallFlags, CopyFlags, fromFlagOrDefault, installVerbosity, copyVerbosity)
 import Distribution.Simple.Utils (installDirectoryContents, installExecutableFile)
+import Distribution.System (Platform (..), OS (OSX))
 import Distribution.Verbosity (normal, Verbosity)
 
 import Distribution.MacOSX.Internal
@@ -61,7 +61,7 @@ appBundleBuildHook ::
           -- 'Distribution.Simple.postBuild'.
   -> BuildFlags -> PackageDescription -> LocalBuildInfo -> IO ()
 appBundleBuildHook apps _ _ pkg localb =
-  if isMacOS
+  if isMacOS localb
      then do let buildDirLbi = buildDir localb
              let macApps = getMacAppsForBuildableExecutors apps (executables pkg)
              forM_ macApps (makeAppBundle . createAppBuildInfo buildDirLbi)
@@ -106,7 +106,7 @@ appBundleInstallOrCopyHook ::
            -- with no icon or plist, and no dependency-chasing.
   -> Verbosity
   -> PackageDescription -> LocalBuildInfo -> IO ()
-appBundleInstallOrCopyHook apps verbosity pkg localb = when isMacOS $ do
+appBundleInstallOrCopyHook apps verbosity pkg localb = when (isMacOS localb) $ do
   libraryHaskell  <- flip fmap getHomeDirectory $ (</> "Library/Haskell")
   let standardPrefix = (libraryHaskell ++ "/") `isPrefixOf` prefix installDir
   let applicationsDir = if standardPrefix
@@ -177,8 +177,10 @@ bundleScriptElsewhere localb app = unlines
     appInfo    = toAppBuildInfo localb app
     appPathSrc = abAppPath appInfo
  
-isMacOS :: Bool
-isMacOS = os == "darwin"
+isMacOS :: LocalBuildInfo -> Bool
+isMacOS localb = case hostPlatform localb of
+  Platform _ OSX -> True
+  _ -> False
 
 -- | Given a 'MacApp' in context, make an application bundle in the
 -- build area. (for internal use only)
