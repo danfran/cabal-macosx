@@ -31,7 +31,6 @@ import Control.Exception
 import Prelude hiding ( catch )
 import Control.Monad (forM_, when)
 import Data.List ( isPrefixOf )
-import Data.Text ( Text )
 import System.Cmd (system)
 import System.FilePath
 import System.Directory (copyFile, createDirectoryIfMissing, getHomeDirectory)
@@ -55,6 +54,7 @@ import Distribution.MacOSX.Internal
 import Distribution.MacOSX.AppBuildInfo
 import Distribution.MacOSX.Common
 import Distribution.MacOSX.Dependencies
+import Distribution.MacOSX.Templates
 
 -- | Post-build hook for OS X application bundles.  Does nothing if
 -- called on another O/S.
@@ -116,9 +116,9 @@ appBundleInstallOrCopyHook ::
   -> Verbosity
   -> PackageDescription -> LocalBuildInfo -> IO ()
 #if MIN_VERSION_Cabal(1,18,0)
-  appBundleInstallOrCopyHook apps verbosity pkg localb = when (isMacOS localb) $ do
+appBundleInstallOrCopyHook apps verbosity pkg localb = when (isMacOS localb) $ do
 #else
-  appBundleInstallOrCopyHook apps verbosity pkg localb = when isMacOS $ do
+appBundleInstallOrCopyHook apps verbosity pkg localb = when isMacOS $ do
 #endif
   libraryHaskell  <- flip fmap getHomeDirectory $ (</> "Library/Haskell")
   let standardPrefix = (libraryHaskell ++ "/") `isPrefixOf` prefix installDir
@@ -273,40 +273,3 @@ maybeCopyIcon appPath app =
          copyFile icPath $
                   appPath </> "Contents/Resources" </> takeFileName icPath
     Nothing -> return ()
-
--- | Default plist template, based on that in macosx-app from wx (but
--- with version stuff removed).
-plistTemplate :: Text
-plistTemplate = "\
-    \<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n\
-    \<!DOCTYPE plist SYSTEM \"file://localhost/System/Library/DTDs/PropertyList.dtd\">\n\
-    \<plist version=\"0.9\">\n\
-    \<dict>\n\
-            \<key>CFBundleInfoDictionaryVersion</key>\n\
-            \<string>6.0</string>\n\
-            \<key>CFBundleIdentifier</key>\n\
-            \<string>org.haskell.$program</string>\n\
-            \<key>CFBundleDevelopmentRegion</key>\n\
-            \<string>English</string>\n\
-            \<key>CFBundleExecutable</key>\n\
-            \<string>$program</string>\n\
-            \<key>CFBundleIconFile</key>\n\
-            \<string>$iconPath</string>\n\
-            \<key>CFBundleName</key>\n\
-            \<string>$program</string>\n\
-            \<key>CFBundlePackageType</key>\n\
-            \<string>APPL</string>\n\
-            \<key>CFBundleSignature</key>\n\
-            \<string>????</string>\n\
-            \<key>CFBundleVersion</key>\n\
-            \<string>1.0</string>\n\
-            \<key>CFBundleShortVersionString</key>\n\
-            \<string>1.0</string>\n\
-            \<key>CFBundleGetInfoString</key>\n\
-            \<string>$program, bundled by cabal-macosx</string>\n\
-            \<key>LSRequiresCarbon</key>\n\
-            \<true/>\n\
-            \<key>CSResourcesFileMapped</key>\n\
-            \<true/>\n\
-    \</dict>\n\
-    \</plist>"

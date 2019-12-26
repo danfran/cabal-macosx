@@ -24,6 +24,7 @@ module Distribution.MacOSX.Internal (
 #if MIN_VERSION_Cabal(2,0,0)
 import Data.String (fromString)
 import Distribution.Text (display)
+import Distribution.Types.UnqualComponentName (unUnqualComponentName)
 #endif
 import Prelude hiding ( catch )
 import System.Cmd ( system )
@@ -46,7 +47,7 @@ getMacAppsForBuildableExecutors macApps executables =
     xs -> filter buildableApp xs
   where -- Make a default MacApp in absence of explicit from Setup.hs
 #if MIN_VERSION_Cabal(2,0,0)
-        mkDefault x = MacApp (display $ exeName x) Nothing Nothing [] [] DoNotChase
+        mkDefault x = MacApp (unUnqualComponentName $ exeName x) Nothing Nothing [] [] DoNotChase
 #else
         mkDefault x = MacApp (exeName x) Nothing Nothing [] [] DoNotChase
 #endif

@@ -10,10 +10,13 @@ import Test.Framework.Providers.HUnit (testCase)
 #if MIN_VERSION_Cabal(2,0,0)
 import Distribution.Types.ExecutableScope
 #endif
-import Distribution.PackageDescription (BuildInfo(..), Executable(..), emptyBuildInfo)
+import Distribution.PackageDescription (BuildInfo(..), Executable(..), emptyBuildInfo, emptyExecutable)
 
 import Distribution.MacOSX.Internal (getMacAppsForBuildableExecutors)
 import Distribution.MacOSX.Common
+
+getExecutableScopeUnknown :: ExecutableScope
+getExecutableScopeUnknown = exeScope $ emptyExecutable
 
 macosxInternalTests :: Test
 macosxInternalTests = testGroup "Distribution.MacOSX.Internal"
@@ -43,8 +46,8 @@ testBuildMacApp_noExecutables = do
 testBuildMacApp_twoBuildableExecutables :: Assertion
 testBuildMacApp_twoBuildableExecutables = do
 #if MIN_VERSION_Cabal(2,0,0)
-    let execs = [ Executable "Dummy One" "/tmp" ExecutableScopeUnknown emptyBuildInfo
-                  , Executable "Dummy Two" "/tmp" ExecutableScopeUnknown  emptyBuildInfo ]
+    let execs = [ Executable "Dummy One" "/tmp" getExecutableScopeUnknown emptyBuildInfo
+                  , Executable "Dummy Two" "/tmp" getExecutableScopeUnknown emptyBuildInfo ]
 #else
     let execs = [ Executable "Dummy One" "/tmp" emptyBuildInfo
                   , Executable "Dummy Two" "/tmp" emptyBuildInfo ]
@@ -57,8 +60,8 @@ testBuildMacApp_twoBuildableExecutables = do
 testBuildMacApp_twoExcetuablesOneBuildableAndOneNot :: Assertion
 testBuildMacApp_twoExcetuablesOneBuildableAndOneNot = do
 #if MIN_VERSION_Cabal(2,0,0)
-    let execs = [ Executable "Dummy One" "/tmp" ExecutableScopeUnknown (emptyBuildInfo { buildable = False })
-                  , Executable "Dummy Two" "/tmp" ExecutableScopeUnknown  emptyBuildInfo ]
+    let execs = [ Executable "Dummy One" "/tmp" getExecutableScopeUnknown (emptyBuildInfo { buildable = False })
+                  , Executable "Dummy Two" "/tmp" getExecutableScopeUnknown  emptyBuildInfo ]
 #else
     let execs = [ Executable "Dummy One" "/tmp" (emptyBuildInfo { buildable = False })
                   , Executable "Dummy Two" "/tmp" emptyBuildInfo ]
@@ -70,8 +73,8 @@ testBuildMacApp_twoExcetuablesOneBuildableAndOneNot = do
 testBuildMacApp_twoAppsAndTwoExecutablesOneBuildableOneNot :: Assertion
 testBuildMacApp_twoAppsAndTwoExecutablesOneBuildableOneNot = do
 #if MIN_VERSION_Cabal(2,0,0)
-    let execs = [ Executable "Dummy One" "/tmp" ExecutableScopeUnknown (emptyBuildInfo { buildable = False })
-                  , Executable "Dummy Two" "/tmp" ExecutableScopeUnknown  emptyBuildInfo ]
+    let execs = [ Executable "Dummy One" "/tmp" getExecutableScopeUnknown (emptyBuildInfo { buildable = False })
+                  , Executable "Dummy Two" "/tmp" getExecutableScopeUnknown  emptyBuildInfo ]
 #else
     let execs = [ Executable "Dummy One" "/tmp" (emptyBuildInfo { buildable = False })
                   , Executable "Dummy Two" "/tmp" emptyBuildInfo ]

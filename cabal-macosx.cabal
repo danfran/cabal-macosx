@@ -46,7 +46,8 @@ Library
                     Distribution.MacOSX.Common,
                     Distribution.MacOSX.AppBuildInfo,
                     Distribution.MacOSX.Dependencies,
-                    Distribution.MacOSX.DG
+                    Distribution.MacOSX.DG,
+                    Distribution.MacOSX.Templates
   ghc-options:      -fwarn-tabs -Wall
 
 Executable macosx-app
