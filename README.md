@@ -55,7 +55,7 @@ And modify your `Setup.hs` to call the `cabal-macosx` post-build hook:
         }
       ]
 
-See [the Hackage documentation] for details on the build hook API.
+See [the Hackage documentation][cabal-macosx-hackage] for details on the build hook API.
 
 For more examples please visit [cabal-macosx-examples](https://github.com/danfran/cabal-macosx-examples).
 
