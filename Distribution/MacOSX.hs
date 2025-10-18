@@ -40,7 +40,7 @@ import qualified Data.Text.IO as T
 import Distribution.PackageDescription (PackageDescription(..))
 import Distribution.Simple
 import Distribution.Simple.InstallDirs (bindir, prefix, CopyDest(NoCopyDest))
-import Distribution.Simple.LocalBuildInfo (absoluteInstallDirs, LocalBuildInfo(..))
+import Distribution.Simple.LocalBuildInfo (absoluteInstallDirs, LocalBuildInfo(..), buildDir)
 import Distribution.Simple.Setup (BuildFlags, InstallFlags, CopyFlags, fromFlagOrDefault, installVerbosity, copyVerbosity)
 import Distribution.Simple.Utils (installDirectoryContents, installExecutableFile)
 #if MIN_VERSION_Cabal(1,18,0)
@@ -71,7 +71,7 @@ appBundleBuildHook apps _ _ pkg localb =
 #else
   if isMacOS
 #endif
-     then do let buildDirLbi = buildDir localb
+     then do let buildDirLbi = getSymbolicPathCompat $ buildDir localb
              let macApps = getMacAppsForBuildableExecutors apps (executables pkg)
              forM_ macApps (makeAppBundle . createAppBuildInfo buildDirLbi)
      else putStrLn "Not OS X, so not building an application bundle."
@@ -138,7 +138,7 @@ appBundleInstallOrCopyHook apps verbosity pkg localb = when isMacOS $ do
     let script = if standardPrefix
                     then bundleScriptLibraryHaskell localb app
                     else bundleScriptElsewhere      localb app
-        scriptFileSrc = buildDir localb   </> "_" ++ appName app <.> "sh"
+        scriptFileSrc = getSymbolicPathCompat (buildDir localb) </> "_" ++ appName app <.> "sh"
         scriptFileTgt = bindir installDir </> appName app
     writeFile scriptFileSrc script
     installExecutableFile verbosity scriptFileSrc scriptFileTgt
@@ -155,7 +155,7 @@ bundleScriptLibraryHaskell localb app = unlines
   where
     appInfo    = toAppBuildInfo localb app
     appPathSrc = abAppPath appInfo
- 
+
 bundleScriptElsewhere :: LocalBuildInfo -> MacApp -> String
 bundleScriptElsewhere localb app = unlines
   [ "#!/bin/bash"
