@@ -67,7 +67,7 @@ If you are using Stack, add the current version of `cabal-macosx` to the
 `extra-deps` section of your `stack.yaml`. For example,
 
     extra-deps:
-    - cabal-macosx-0.2.3.5
+    - cabal-macosx-0.2.4.2
 
 As of Stack 1.3.2, Cabal's `custom-setup` section is not yet supported, so
 you will also need to add `cabal-macosx` to your executable's main
